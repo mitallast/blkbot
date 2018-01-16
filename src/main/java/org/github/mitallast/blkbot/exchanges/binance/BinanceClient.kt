@@ -4,12 +4,17 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.type.TypeReference
 import com.typesafe.config.Config
 import io.netty.handler.codec.http.*
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
+import io.netty.handler.codec.http.websocketx.WebSocketFrame
+import io.netty.util.AsciiString
 import io.vavr.Tuple3
 import io.vavr.collection.Vector
 import io.vavr.concurrent.Future
 import io.vavr.control.Option
 import org.apache.logging.log4j.LogManager
 import org.github.mitallast.blkbot.common.http.HttpClient
+import org.github.mitallast.blkbot.common.http.WebSocketClient
+import org.github.mitallast.blkbot.common.http.WebSocketListener
 import org.github.mitallast.blkbot.common.json.JsonService
 import org.github.mitallast.blkbot.common.netty.NettyProvider
 import org.github.mitallast.blkbot.exchanges.ExchangePair
@@ -56,9 +61,14 @@ class BinanceInterval private constructor(val value: String) {
     }
 }
 
+interface BinanceListener<in T> {
+    fun handle(event: T)
+    fun close()
+}
+
 class BinanceClient @Inject constructor(
-        config: Config,
-        provider: NettyProvider,
+        private val config: Config,
+        private val provider: NettyProvider,
         private val json: JsonService
 ) {
     private val logger = LogManager.getLogger()
@@ -135,7 +145,7 @@ class BinanceClient @Inject constructor(
             startTime: Option<Long> = Option.none(),
             endTime: Option<Long> = Option.none(),
             limit: Option<BinanceLimit> = Option.none()
-            ): Future<Vector<ResponseCandlestick>> {
+    ): Future<Vector<ResponseCandlestick>> {
         val uri = "/api/v1/klines?symbol=${pair.symbol()}&interval=${interval.value}" +
                 startTime.map { i -> "&startTime=$i" }.getOrElse("") +
                 endTime.map { i -> "&endTime=$i" }.getOrElse("") +
@@ -177,7 +187,7 @@ class BinanceClient @Inject constructor(
     /**
      * Latest price for all symbols.
      */
-    fun allPrices() : Future<Vector<ResponseLatestPrice>> {
+    fun allPrices(): Future<Vector<ResponseLatestPrice>> {
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/api/v1/ticker/allPrices")
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -187,7 +197,7 @@ class BinanceClient @Inject constructor(
     /**
      * Best price/qty on the order book for all symbols
      */
-    fun allBookTickers() : Future<Vector<ResponseBestPriceQty>> {
+    fun allBookTickers(): Future<Vector<ResponseBestPriceQty>> {
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/api/v1/ticker/allBookTickers")
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -240,6 +250,52 @@ class BinanceClient @Inject constructor(
             mapped
         }
     }
+
+    fun depthDataStream(pair: ExchangePair, listener: BinanceListener<EventDepth>) {
+        val uri = URI("wss://stream.binance.com:9443/ws/${pair.symbol().toLowerCase()}@depth")
+        val type = object : TypeReference<EventDepthRaw>() {}
+        val mapper = object : BinanceListener<EventDepthRaw> {
+            override fun handle(event: EventDepthRaw) {
+                listener.handle(event.map())
+            }
+            override fun close() {
+                listener.close()
+            }
+        }
+        dataStream(uri, type, mapper)
+    }
+
+    fun klineDataStream(pair: ExchangePair, interval: BinanceInterval, listener: BinanceListener<EventKLine>) {
+        val uri = URI("wss://stream.binance.com:9443/ws/${pair.symbol().toLowerCase()}@kline_${interval.value}")
+        val type = object : TypeReference<EventKLine>() {}
+        dataStream(uri, type, listener)
+    }
+
+    fun tradesDataStream(pair: ExchangePair, listener: BinanceListener<EventTrades>) {
+        val uri = URI("wss://stream.binance.com:9443/ws/${pair.symbol().toLowerCase()}@aggTrade")
+        val type = object : TypeReference<EventTrades>() {}
+        dataStream(uri, type, listener)
+    }
+
+    private fun <T> dataStream(uri: URI, type: TypeReference<T>, listener: BinanceListener<T>) {
+        val webSocketListener = object : WebSocketListener {
+            override fun handle(frame: WebSocketFrame) {
+                when (frame) {
+                    is TextWebSocketFrame -> {
+                        val event = json.deserialize(frame.content(), type)
+                        logger.info("event: $event")
+                        listener.handle(event)
+                    }
+                }
+            }
+
+            override fun close() {
+                logger.info("stream closed")
+                listener.close()
+            }
+        }
+        WebSocketClient(uri, webSocketListener, config, provider)
+    }
 }
 
 object ResponsePong
@@ -269,22 +325,14 @@ data class ResponseDepthAsk(val price: Double, val quantity: Double) {
 data class ResponseDepth(val lastUpdateId: Long, val bids: Vector<ResponseDepthBid>, val asks: Vector<ResponseDepthAsk>)
 
 data class ResponseAggTrades(
-        @JsonProperty("a")
-        val tradeId: Long,
-        @JsonProperty("p")
-        val price: Double,
-        @JsonProperty("q")
-        val quantity: Double,
-        @JsonProperty("f")
-        val firstTradeId: Long,
-        @JsonProperty("l")
-        val lastTradeId: Long,
-        @JsonProperty("T")
-        val timestamp: Long,
-        @JsonProperty("m")
-        val isBuyerMaker: Boolean,
-        @JsonProperty("M")
-        val isTradeBestPriceMatch: Boolean
+        @JsonProperty("a") val tradeId: Long,
+        @JsonProperty("p") val price: Double,
+        @JsonProperty("q") val quantity: Double,
+        @JsonProperty("f") val firstTradeId: Long,
+        @JsonProperty("l") val lastTradeId: Long,
+        @JsonProperty("T") val timestamp: Long,
+        @JsonProperty("m") val isBuyerMaker: Boolean,
+        @JsonProperty("M") val isTradeBestPriceMatch: Boolean
 )
 
 data class ResponseCandlestick(
@@ -332,4 +380,68 @@ data class ResponseBestPriceQty(
         val bidQty: Double,
         val askPrice: Double,
         val askQty: Double
+)
+
+data class EventDepthRaw(
+        @JsonProperty("e") val eventType: String,
+        @JsonProperty("E") val eventTime: Long,
+        @JsonProperty("s") val symbol: String,
+        @JsonProperty("u") val updateId: Long,
+        @JsonProperty("b") val bids: Vector<Tuple3<Double, Double, List<String>>>,
+        @JsonProperty("a") val asks: Vector<Tuple3<Double, Double, List<String>>>
+) {
+    fun map(): EventDepth = EventDepth(
+            eventTime = eventTime,
+            symbol = symbol,
+            updateId = updateId,
+            bids = bids.map { bid -> ResponseDepthBid(bid._1, bid._2) },
+            asks = asks.map { ask -> ResponseDepthAsk(ask._1, ask._2) }
+    )
+}
+
+data class EventDepth(
+        val eventTime: Long,
+        val symbol: String,
+        val updateId: Long,
+        val bids: Vector<ResponseDepthBid>,
+        val asks: Vector<ResponseDepthAsk>
+)
+
+data class EventKLineData(
+        @JsonProperty("t") val startTime: Long,
+        @JsonProperty("T") val endTime: Long,
+        @JsonProperty("s") val symbol: String,
+        @JsonProperty("i") val interval: String,
+        @JsonProperty("f") val firstTradeId: Long,
+        @JsonProperty("L") val lastTradeId: Long,
+        @JsonProperty("o") val open: Double,
+        @JsonProperty("c") val close: Double,
+        @JsonProperty("h") val high: Double,
+        @JsonProperty("l") val low: Double,
+        @JsonProperty("v") val volume: Double,
+        @JsonProperty("n") val numberOfTrades: Long,
+        @JsonProperty("x") val isBarFinal: Boolean,
+        @JsonProperty("q") val quoteVolume: Double,
+        @JsonProperty("V") val volumeOfActiveBuy: Double,
+        @JsonProperty("Q") val quoteVolumeOfActiveBuy: Double,
+        @JsonProperty("B") val ignored: Double
+)
+data class EventKLine(
+        @JsonProperty("e") val eventType: String,
+        @JsonProperty("E") val eventTime: Long,
+        @JsonProperty("s") val symbol: String,
+        @JsonProperty("k") val data: EventKLineData
+)
+data class EventTrades(
+        @JsonProperty("e") val eventType: String,
+        @JsonProperty("E") val eventTime: Long,
+        @JsonProperty("s") val symbol: String,
+        @JsonProperty("a") val aggTradeId: Long,
+        @JsonProperty("p") val price: Double,
+        @JsonProperty("q") val quantity: Double,
+        @JsonProperty("f") val firstBreakdownTradeId: Long,
+        @JsonProperty("l") val lastBreakdownTradeId: Long,
+        @JsonProperty("T") val tradeTime: Long,
+        @JsonProperty("m") val buyerIsMaker: Boolean,
+        @JsonProperty("M") val ignore: Boolean
 )

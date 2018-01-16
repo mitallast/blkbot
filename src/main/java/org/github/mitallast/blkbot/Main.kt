@@ -4,9 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.github.mitallast.blkbot.common.http.HttpClient
 import org.github.mitallast.blkbot.common.netty.NettyProvider
 import org.github.mitallast.blkbot.exchanges.ExchangePair
-import org.github.mitallast.blkbot.exchanges.binance.BinanceClient
-import org.github.mitallast.blkbot.exchanges.binance.BinanceInterval
-import org.github.mitallast.blkbot.exchanges.binance.BinanceLimit
+import org.github.mitallast.blkbot.exchanges.binance.*
 import java.net.URI
 import java.util.concurrent.CountDownLatch
 
@@ -29,7 +27,13 @@ object Main {
 //        binance.klines(pair, interval).await().onComplete{ r -> println(r) }
 //        binance.ticker24hr(pair).await().onComplete{ r -> println(r) }
 //        binance.allPrices().await().onComplete{ r -> println(r) }
-        binance.allBookTickers().await().onComplete{ r -> println(r) }
+//        binance.allBookTickers().await().onComplete{ r -> println(r) }
+
+        val listener = object : BinanceListener<EventTrades> {
+            override fun handle(event: EventTrades) {}
+            override fun close() {}
+        }
+        binance.tradesDataStream(pair, listener)
 
         val countDownLatch = CountDownLatch(1)
         Runtime.getRuntime().addShutdownHook(Thread {
