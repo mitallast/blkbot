@@ -1,5 +1,6 @@
 package org.github.mitallast.blkbot
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.typesafe.config.ConfigFactory
 import io.vavr.collection.Vector
 import io.vavr.control.Option
@@ -10,6 +11,7 @@ import org.github.mitallast.blkbot.exchanges.binance.*
 import org.github.mitallast.blkbot.exchanges.bittrex.BittrexClient
 import org.github.mitallast.blkbot.exchanges.bittrex.BittrexOrderType
 import org.github.mitallast.blkbot.exchanges.cryptopia.CryptopiaClient
+import org.github.mitallast.blkbot.telegram.TelegramBotApi
 import java.net.URI
 import java.util.concurrent.CountDownLatch
 
@@ -56,6 +58,24 @@ object Main {
 //        cryptopia.marketHistory(Option.some(pair)).await().onComplete { r -> println(r) }
 //        cryptopia.marketOrders(pair).await().onComplete { r -> println(r) }
 //        cryptopia.marketOrderGroups(Vector.of(pair)).await().onComplete { r -> println(r) }
+
+        val tg = bot.injector().getInstance(TelegramBotApi::class.java)
+        var offset: Long? = null
+        while (!Thread.interrupted()) {
+            val updates = tg.getUpdates(offset = offset, timeout = 100000).await().get()
+            for(update in updates) {
+                offset = update.updateId + 1
+                when {
+                    update.message.isDefined -> {
+                        val message = update.message.get()
+                        tg.sendMessage(
+                                chatId = message.chat.id.toString(),
+                                text = "Hello world"
+                        ).await().onComplete { r -> println(r) }
+                    }
+                }
+            }
+        }
 
         val countDownLatch = CountDownLatch(1)
         Runtime.getRuntime().addShutdownHook(Thread {

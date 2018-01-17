@@ -14,6 +14,7 @@ import org.github.mitallast.blkbot.common.http.HttpModule
 import org.github.mitallast.blkbot.common.json.JsonModule
 import org.github.mitallast.blkbot.common.netty.NettyModule
 import org.github.mitallast.blkbot.exchanges.ExchangesModule
+import org.github.mitallast.blkbot.telegram.TelegramModule
 
 class Bot(conf: Config, vararg plugins: AbstractModule) : AbstractLifecycleComponent() {
     private val config = conf.withFallback(ConfigFactory.defaultReference())
@@ -31,6 +32,7 @@ class Bot(conf: Config, vararg plugins: AbstractModule) : AbstractLifecycleCompo
         modules.add(HttpModule())
 
         modules.add(ExchangesModule())
+        modules.add(TelegramModule())
 
         modules.add(*plugins)
         injector = modules.createInjector()
