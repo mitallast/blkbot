@@ -5,13 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.type.TypeReference
 import com.typesafe.config.Config
 import io.netty.handler.codec.http.*
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
-import io.netty.handler.codec.http.websocketx.WebSocketFrame
 import io.vavr.collection.Vector
 import io.vavr.concurrent.Future
 import org.apache.logging.log4j.LogManager
 import org.github.mitallast.blkbot.common.http.HttpClient
-import org.github.mitallast.blkbot.common.http.WebSocketListener
 import org.github.mitallast.blkbot.common.json.JsonService
 import org.github.mitallast.blkbot.exchanges.ExchangePair
 import org.joda.time.DateTime
@@ -23,11 +20,6 @@ open class BittrexException(message: String) : RuntimeException(message)
 class BittrexClientException(val code: Int, message: String) : BittrexException(message)
 class BittrexServerException(val code: Int, message: String) : BittrexException(message)
 class BittrexUnknownException(val code: Int, message: String) : BittrexException(message)
-
-interface BittrexListener<in T> {
-    fun handle(event: T)
-    fun close()
-}
 
 class BittrexClient @Inject constructor(
         private val config: Config,
@@ -171,26 +163,6 @@ class BittrexClient @Inject constructor(
                 else -> throw BittrexException(mapped.message)
             }
         }
-    }
-
-    private fun <T> dataStream(uri: URI, type: TypeReference<T>, listener: BittrexListener<T>) {
-        val webSocketListener = object : WebSocketListener {
-            override fun handle(frame: WebSocketFrame) {
-                when (frame) {
-                    is TextWebSocketFrame -> {
-                        val event = json.deserialize(frame.content(), type)
-                        logger.info("event: $event")
-                        listener.handle(event)
-                    }
-                }
-            }
-
-            override fun close() {
-                logger.info("stream closed")
-                listener.close()
-            }
-        }
-        http.websocket(uri, webSocketListener)
     }
 }
 
