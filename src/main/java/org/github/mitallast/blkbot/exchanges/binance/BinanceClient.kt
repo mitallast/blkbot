@@ -6,7 +6,6 @@ import com.typesafe.config.Config
 import io.netty.handler.codec.http.*
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
 import io.netty.handler.codec.http.websocketx.WebSocketFrame
-import io.netty.util.AsciiString
 import io.vavr.Tuple3
 import io.vavr.collection.Vector
 import io.vavr.concurrent.Future
@@ -16,7 +15,6 @@ import org.github.mitallast.blkbot.common.http.HttpClient
 import org.github.mitallast.blkbot.common.http.WebSocketClient
 import org.github.mitallast.blkbot.common.http.WebSocketListener
 import org.github.mitallast.blkbot.common.json.JsonService
-import org.github.mitallast.blkbot.common.netty.NettyProvider
 import org.github.mitallast.blkbot.exchanges.ExchangePair
 import java.net.URI
 import java.nio.charset.Charset
@@ -68,15 +66,15 @@ interface BinanceListener<in T> {
 
 class BinanceClient @Inject constructor(
         private val config: Config,
-        private val provider: NettyProvider,
-        private val json: JsonService
+        private val json: JsonService,
+        private val http: HttpClient
 ) {
     private val logger = LogManager.getLogger()
 
     private val charset = Charset.forName("UTF-8")
     private val endpoint = URI(config.getString("binance.endpoint"))
     private val host = endpoint.host
-    private val http = HttpClient(endpoint, config, provider)
+    private val connect = http.connect(endpoint)
 
     /**
      * Test connectivity to the Rest API.
@@ -206,7 +204,7 @@ class BinanceClient @Inject constructor(
 
     private fun send(request: HttpRequest): Future<FullHttpResponse> {
         logger.info("request ${request.uri()}")
-        return http.send(request).map { response ->
+        return connect.send(request).map { response ->
             val code = response.status().code()
             when (code) {
                 in 200..299 -> {
@@ -258,6 +256,7 @@ class BinanceClient @Inject constructor(
             override fun handle(event: EventDepthRaw) {
                 listener.handle(event.map())
             }
+
             override fun close() {
                 listener.close()
             }
@@ -294,7 +293,7 @@ class BinanceClient @Inject constructor(
                 listener.close()
             }
         }
-        WebSocketClient(uri, webSocketListener, config, provider)
+        http.websocket(uri, webSocketListener)
     }
 }
 
@@ -426,12 +425,14 @@ data class EventKLineData(
         @JsonProperty("Q") val quoteVolumeOfActiveBuy: Double,
         @JsonProperty("B") val ignored: Double
 )
+
 data class EventKLine(
         @JsonProperty("e") val eventType: String,
         @JsonProperty("E") val eventTime: Long,
         @JsonProperty("s") val symbol: String,
         @JsonProperty("k") val data: EventKLineData
 )
+
 data class EventTrades(
         @JsonProperty("e") val eventType: String,
         @JsonProperty("E") val eventTime: Long,

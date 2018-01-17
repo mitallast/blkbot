@@ -10,6 +10,7 @@ import org.github.mitallast.blkbot.common.component.ModulesBuilder
 import org.github.mitallast.blkbot.common.component.LifecycleService
 import org.github.mitallast.blkbot.common.events.EventBusModule
 import org.github.mitallast.blkbot.common.file.FileModule
+import org.github.mitallast.blkbot.common.http.HttpModule
 import org.github.mitallast.blkbot.common.json.JsonModule
 import org.github.mitallast.blkbot.common.netty.NettyModule
 import org.github.mitallast.blkbot.exchanges.ExchangesModule
@@ -27,6 +28,7 @@ class Bot(conf: Config, vararg plugins: AbstractModule) : AbstractLifecycleCompo
         modules.add(JsonModule())
         modules.add(EventBusModule())
         modules.add(NettyModule())
+        modules.add(HttpModule())
 
         modules.add(ExchangesModule())
 
