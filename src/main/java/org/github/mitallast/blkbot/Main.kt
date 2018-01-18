@@ -59,24 +59,6 @@ object Main {
 //        cryptopia.marketOrders(pair).await().onComplete { r -> println(r) }
 //        cryptopia.marketOrderGroups(Vector.of(pair)).await().onComplete { r -> println(r) }
 
-        val tg = bot.injector().getInstance(TelegramBotApi::class.java)
-        var offset: Long? = null
-        while (!Thread.interrupted()) {
-            val updates = tg.getUpdates(offset = offset, timeout = 100000).await().get()
-            for(update in updates) {
-                offset = update.updateId + 1
-                when {
-                    update.message.isDefined -> {
-                        val message = update.message.get()
-                        tg.sendMessage(
-                                chatId = message.chat.id.toString(),
-                                text = "Hello world"
-                        ).await().onComplete { r -> println(r) }
-                    }
-                }
-            }
-        }
-
         val countDownLatch = CountDownLatch(1)
         Runtime.getRuntime().addShutdownHook(Thread {
             bot.close()
