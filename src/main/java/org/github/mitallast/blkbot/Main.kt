@@ -23,19 +23,25 @@ object Main {
         val bot = Bot(config)
         bot.start()
 
-        val pair = ExchangePair("BCN", "BTC")
+        val pair = ExchangePair("BTC", "LTC")
 
 //        val limit = BinanceLimit.limit5
 //        val interval = BinanceInterval.int5m
 //        val binance = bot.injector().getInstance(BinanceClient::class.java)
 //        binance.ping().await().onComplete{ r -> println(r) }
 //        binance.time().await().onComplete{ r -> println(r) }
+//        while (!Thread.interrupted()) {
+//            binance.exchangeInfo().await().onComplete { r -> println(r) }
+//            Thread.sleep(10000)
+//        }
 //        binance.depth(pair, limit).await().onComplete{ r -> println(r) }
+//        binance.trades(pair).await().onComplete{ r -> println(r) }
+//        binance.historicalTrades(pair).await().onComplete{ r -> println(r) }
 //        binance.aggTrades(pair).await().onComplete{ r -> println(r) }
 //        binance.klines(pair, interval).await().onComplete{ r -> println(r) }
 //        binance.ticker24hr(pair).await().onComplete{ r -> println(r) }
-//        binance.allPrices().await().onComplete{ r -> println(r) }
-//        binance.allBookTickers().await().onComplete{ r -> println(r) }
+//        binance.tickerPrices().await().onComplete{ r -> println(r) }
+//        binance.tickerPrice(pair).await().onComplete{ r -> println(r) }
 //        val listener = object : BinanceListener<EventTrades> {
 //            override fun handle(event: EventTrades) {}
 //            override fun close() {}
@@ -45,7 +51,7 @@ object Main {
 //        val bittrex = bot.injector().getInstance(BittrexClient::class.java)
 //        bittrex.markets().await().onComplete { r -> println(r) }
 //        bittrex.currencies().await().onComplete { r -> println(r) }
-//        bittrex.ticker(pair).await().onComplete { r -> println(r) }
+//        bittrex.ticker(pair).await().onComplete { r -> println(r.last()) }
 //        bittrex.marketSummaries().await().onComplete { r -> println(r) }
 //        bittrex.marketSummary(pair).await().onComplete { r -> println(r) }
 //        bittrex.orderBook(pair, BittrexOrderType.both).await().onComplete { r -> println(r) }

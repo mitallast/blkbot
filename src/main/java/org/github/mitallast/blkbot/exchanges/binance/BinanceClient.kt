@@ -12,7 +12,6 @@ import io.vavr.concurrent.Future
 import io.vavr.control.Option
 import org.apache.logging.log4j.LogManager
 import org.github.mitallast.blkbot.common.http.HttpClient
-import org.github.mitallast.blkbot.common.http.WebSocketClient
 import org.github.mitallast.blkbot.common.http.WebSocketListener
 import org.github.mitallast.blkbot.common.json.JsonService
 import org.github.mitallast.blkbot.exchanges.ExchangePair
@@ -23,10 +22,15 @@ import javax.inject.Inject
 open class BinanceException(val code: Int, message: String) : RuntimeException(message)
 class BinanceClientException(code: Int, message: String) : BinanceException(code, message)
 class BinanceServerException(code: Int, message: String) : BinanceException(code, message)
+class BinanceLimitException(code: Int, message: String) : BinanceException(code, message)
 class BinanceUnknownException(code: Int, message: String) : BinanceException(code, message)
 
 class BinanceLimit private constructor(val value: Int) {
     override fun toString(): String = value.toString()
+
+    fun greaterThan(limit: BinanceLimit): Boolean {
+        return value > limit.value
+    }
 
     companion object {
         val limit5 = BinanceLimit(5)
@@ -64,6 +68,11 @@ interface BinanceListener<in T> {
     fun close()
 }
 
+annotation class BinanceWeight(val value: Int)
+
+/**
+ * See https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md
+ */
 class BinanceClient @Inject constructor(
         private val config: Config,
         private val json: JsonService,
@@ -79,36 +88,84 @@ class BinanceClient @Inject constructor(
     /**
      * Test connectivity to the Rest API.
      */
-    fun ping(): Future<ResponsePong> {
+    @BinanceWeight(1)
+    fun ping(): Future<BinancePong> {
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/api/v1/ping")
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
         return send(request).map { response ->
             logger.info("pong")
             response.release()
-            ResponsePong
+            BinancePong
         }
     }
 
     /**
      * Check server time
      */
-    fun time(): Future<ResponseTime> {
+    @BinanceWeight(1)
+    fun time(): Future<BinanceTime> {
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/api/v1/time")
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
-        return sendJson(request, object : TypeReference<ResponseTime>() {})
+        return sendJson(request, object : TypeReference<BinanceTime>() {})
+    }
+
+    @BinanceWeight(1)
+    fun exchangeInfo(): Future<BinanceExchangeInfo> {
+        val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/api/v1/exchangeInfo")
+        request.headers().set(HttpHeaderNames.HOST, host)
+        request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
+        return sendJson(request, object : TypeReference<BinanceExchangeInfo>() {})
     }
 
     /**
      * Order book
      */
-    fun depth(pair: ExchangePair, limit: BinanceLimit = BinanceLimit.limit100): Future<ResponseDepth> {
-        val uri = "/api/v1/depth?symbol=${pair.symbol()}&limit=${limit.value}"
+    @BinanceWeight(1)
+    fun depth(pair: ExchangePair, limit: BinanceLimit? = null): Future<BinanceDepth> {
+        if (limit != null && limit.greaterThan(BinanceLimit.limit100)) {
+            throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100")
+        }
+        val uri = "/api/v1/depth?symbol=${pair.symbol()}" +
+                Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
-        return sendJson(request, object : TypeReference<ResponseDepthRaw>() {}).map { raw -> raw.map() }
+        return sendJson(request, object : TypeReference<BinanceDepthRaw>() {}).map { raw -> raw.map() }
+    }
+
+    /**
+     * Get recent trades
+     */
+    @BinanceWeight(1)
+    fun trades(pair: ExchangePair, limit: BinanceLimit? = null): Future<Vector<BinanceTrade>> {
+        if (limit != null && limit.greaterThan(BinanceLimit.limit500)) {
+            throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100, 500")
+        }
+        val uri = "/api/v1/trades?symbol=${pair.symbol()}" +
+                Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
+        val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
+        request.headers().set(HttpHeaderNames.HOST, host)
+        request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
+        return sendJson(request, object : TypeReference<Vector<BinanceTrade>>() {})
+    }
+
+    /**
+     * Get older trades
+     */
+    @BinanceWeight(20)
+    fun historicalTrades(pair: ExchangePair, fromId: Long? = null, limit: BinanceLimit? = null): Future<Vector<BinanceTrade>> {
+        if (limit != null && limit.greaterThan(BinanceLimit.limit500)) {
+            throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100, 500")
+        }
+        val uri = "/api/v1/historicalTrades?symbol=${pair.symbol()}" +
+                Option.of(fromId).map { f -> "&fromId=$f" }.getOrElse("") +
+                Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
+        val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
+        request.headers().set(HttpHeaderNames.HOST, host)
+        request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
+        return sendJson(request, object : TypeReference<Vector<BinanceTrade>>() {})
     }
 
     /**
@@ -117,44 +174,52 @@ class BinanceClient @Inject constructor(
      * Get compressed, aggregate trades. Trades that fill at the time, from the same order,
      * with the same price will have the quantity aggregated.
      */
+    @BinanceWeight(2)
     fun aggTrades(
             pair: ExchangePair,
-            fromId: Option<Long> = Option.none(),
-            startTime: Option<Long> = Option.none(),
-            endTime: Option<Long> = Option.none(),
-            limit: Option<BinanceLimit> = Option.none()): Future<Vector<ResponseAggTrades>> {
+            fromId: Long? = null,
+            startTime: Long? = null,
+            endTime: Long? = null,
+            limit: BinanceLimit? = null): Future<Vector<BinanceAggTrades>> {
+        if (limit != null && limit.greaterThan(BinanceLimit.limit500)) {
+            throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100, 500")
+        }
         val uri = "/api/v1/aggTrades?symbol=${pair.symbol()}" +
-                fromId.map { i -> "&fromId=$i" }.getOrElse("") +
-                startTime.map { i -> "&startTime=$i" }.getOrElse("") +
-                endTime.map { i -> "&endTime=$i" }.getOrElse("") +
-                limit.map { i -> "&limit=${i.value}" }.getOrElse("")
+                Option.of(fromId).map { i -> "&fromId=$i" }.getOrElse("") +
+                Option.of(startTime).map { i -> "&startTime=$i" }.getOrElse("") +
+                Option.of(endTime).map { i -> "&endTime=$i" }.getOrElse("") +
+                Option.of(limit).map { i -> "&limit=${i!!.value}" }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
-        return sendJson(request, object : TypeReference<Vector<ResponseAggTrades>>() {})
+        return sendJson(request, object : TypeReference<Vector<BinanceAggTrades>>() {})
     }
 
     /**
      * Kline/candlestick bars for a symbol. Klines are uniquely identified by their open time.
      */
+    @BinanceWeight(2)
     fun klines(
             pair: ExchangePair,
             interval: BinanceInterval,
-            startTime: Option<Long> = Option.none(),
-            endTime: Option<Long> = Option.none(),
-            limit: Option<BinanceLimit> = Option.none()
-    ): Future<Vector<ResponseCandlestick>> {
+            startTime: Long? = null,
+            endTime: Long? = null,
+            limit: BinanceLimit? = null
+    ): Future<Vector<BinanceCandlestick>> {
+        if (limit != null && limit.greaterThan(BinanceLimit.limit500)) {
+            throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100, 500")
+        }
         val uri = "/api/v1/klines?symbol=${pair.symbol()}&interval=${interval.value}" +
-                startTime.map { i -> "&startTime=$i" }.getOrElse("") +
-                endTime.map { i -> "&endTime=$i" }.getOrElse("") +
-                limit.map { i -> "&limit=${i.value}" }.getOrElse("")
+                Option.of(startTime).map { i -> "&startTime=$i" }.getOrElse("") +
+                Option.of(endTime).map { i -> "&endTime=$i" }.getOrElse("") +
+                Option.of(limit).map { i -> "&limit=${i!!.value}" }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
         val ref = object : TypeReference<Vector<Vector<String>>>() {}
         return sendJson(request, ref).map { klines ->
             klines.map { tuple ->
-                ResponseCandlestick(
+                BinanceCandlestick(
                         tuple[0].toLong(),
                         tuple[1].toDouble(),
                         tuple[2].toDouble(),
@@ -174,32 +239,36 @@ class BinanceClient @Inject constructor(
     /**
      * 24 hour price change statistics.
      */
-    fun ticker24hr(pair: ExchangePair): Future<ResponsePriceChangeStatistics> {
+    @BinanceWeight(1)
+    fun ticker24hr(pair: ExchangePair): Future<BinancePriceChangeStatistics> {
         val uri = "/api/v1/ticker/24hr?symbol=${pair.symbol()}"
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
-        return sendJson(request, object : TypeReference<ResponsePriceChangeStatistics>() {})
+        return sendJson(request, object : TypeReference<BinancePriceChangeStatistics>() {})
     }
 
     /**
      * Latest price for all symbols.
      */
-    fun allPrices(): Future<Vector<ResponseLatestPrice>> {
-        val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/api/v1/ticker/allPrices")
+    @BinanceWeight(1)
+    fun tickerPrices(): Future<Vector<BinanceLastPrice>> {
+        val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/api/v3/ticker/price")
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
-        return sendJson(request, object : TypeReference<Vector<ResponseLatestPrice>>() {})
+        return sendJson(request, object : TypeReference<Vector<BinanceLastPrice>>() {})
     }
 
     /**
-     * Best price/qty on the order book for all symbols
+     * Latest price for a symbol.
      */
-    fun allBookTickers(): Future<Vector<ResponseBestPriceQty>> {
-        val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/api/v1/ticker/allBookTickers")
+    @BinanceWeight(1)
+    fun tickerPrice(pair: ExchangePair): Future<BinanceLastPrice> {
+        val uri = "/api/v3/ticker/price?symbol=${pair.symbol()}"
+        val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
-        return sendJson(request, object : TypeReference<Vector<ResponseBestPriceQty>>() {})
+        return sendJson(request, object : TypeReference<BinanceLastPrice>() {})
     }
 
     private fun send(request: HttpRequest): Future<FullHttpResponse> {
@@ -210,6 +279,12 @@ class BinanceClient @Inject constructor(
                 in 200..299 -> {
                     logger.info("success")
                     response
+                }
+                429 -> {
+                    val message = response.content().toString(charset)
+                    response.release()
+                    logger.warn(message)
+                    throw BinanceLimitException(code, message)
                 }
                 in 400..499 -> {
                     val message = response.content().toString(charset)
@@ -297,33 +372,71 @@ class BinanceClient @Inject constructor(
     }
 }
 
-object ResponsePong
-data class ResponseTime(val serverTime: Long)
-data class ResponseDepthRaw(
+object BinancePong
+
+data class BinanceTime(val serverTime: Long)
+
+data class BinanceExchangeInfo(
+        val timezone: String,
+        val serverTime: Long,
+        val rateLimits: Vector<BinanceRateLimitInfo>,
+        val exchangeFilters: Vector<Any>,
+        val symbols: Vector<BinanceSymbolInfo>
+)
+
+data class BinanceRateLimitInfo(
+        val rateLimitType: String,
+        val interval: String,
+        val limit: Long
+)
+
+data class BinanceSymbolInfo(
+        val symbol: String,
+        val status: String,
+        val baseAsset: String,
+        val baseAssetPrecision: Int,
+        val quoteAsset: String,
+        val quotePrecision: Int,
+        val orderTypes: Vector<String>,
+        val icebergAllowed: Boolean,
+        val filters: Vector<Any>
+)
+
+
+data class BinanceDepthRaw(
         val lastUpdateId: Long,
         val bids: Vector<Tuple3<Double, Double, List<String>>>,
         val asks: Vector<Tuple3<Double, Double, List<String>>>
 ) {
-    fun map(): ResponseDepth {
-        return ResponseDepth(
+    fun map(): BinanceDepth {
+        return BinanceDepth(
                 lastUpdateId,
-                bids.map { bid -> ResponseDepthBid(bid._1, bid._2) },
-                asks.map { ask -> ResponseDepthAsk(ask._1, ask._2) }
+                bids.map { bid -> BinanceDepthBid(bid._1, bid._2) },
+                asks.map { ask -> BinanceDepthAsk(ask._1, ask._2) }
         )
     }
 }
 
-data class ResponseDepthBid(val price: Double, val quantity: Double) {
+data class BinanceDepthBid(val price: Double, val quantity: Double) {
     override fun toString(): String = "{$price,$quantity}"
 }
 
-data class ResponseDepthAsk(val price: Double, val quantity: Double) {
+data class BinanceDepthAsk(val price: Double, val quantity: Double) {
     override fun toString(): String = "{$price,$quantity}"
 }
 
-data class ResponseDepth(val lastUpdateId: Long, val bids: Vector<ResponseDepthBid>, val asks: Vector<ResponseDepthAsk>)
+data class BinanceDepth(val lastUpdateId: Long, val bids: Vector<BinanceDepthBid>, val asks: Vector<BinanceDepthAsk>)
 
-data class ResponseAggTrades(
+data class BinanceTrade(
+        val id: Long,
+        val price: Double,
+        val qty: Double,
+        val time: Long,
+        val isBuyerMaker: Boolean,
+        val isBestMatch: Boolean
+)
+
+data class BinanceAggTrades(
         @JsonProperty("a") val tradeId: Long,
         @JsonProperty("p") val price: Double,
         @JsonProperty("q") val quantity: Double,
@@ -334,7 +447,7 @@ data class ResponseAggTrades(
         @JsonProperty("M") val isTradeBestPriceMatch: Boolean
 )
 
-data class ResponseCandlestick(
+data class BinanceCandlestick(
         val openTime: Long,
         val open: Double,
         val high: Double,
@@ -348,7 +461,7 @@ data class ResponseCandlestick(
         val takerBuyQuoteAssetVolume: Double
 )
 
-data class ResponsePriceChangeStatistics(
+data class BinancePriceChangeStatistics(
         val symbol: String,
         val priceChange: Double,
         val priceChangePercent: Double,
@@ -372,14 +485,7 @@ data class ResponsePriceChangeStatistics(
         val count: Long
 )
 
-data class ResponseLatestPrice(val symbol: String, val price: Double)
-data class ResponseBestPriceQty(
-        val symbol: String,
-        val bidPrice: Double,
-        val bidQty: Double,
-        val askPrice: Double,
-        val askQty: Double
-)
+data class BinanceLastPrice(val symbol: String, val price: Double)
 
 data class EventDepthRaw(
         @JsonProperty("e") val eventType: String,
@@ -393,8 +499,8 @@ data class EventDepthRaw(
             eventTime = eventTime,
             symbol = symbol,
             updateId = updateId,
-            bids = bids.map { bid -> ResponseDepthBid(bid._1, bid._2) },
-            asks = asks.map { ask -> ResponseDepthAsk(ask._1, ask._2) }
+            bids = bids.map { bid -> BinanceDepthBid(bid._1, bid._2) },
+            asks = asks.map { ask -> BinanceDepthAsk(ask._1, ask._2) }
     )
 }
 
@@ -402,8 +508,8 @@ data class EventDepth(
         val eventTime: Long,
         val symbol: String,
         val updateId: Long,
-        val bids: Vector<ResponseDepthBid>,
-        val asks: Vector<ResponseDepthAsk>
+        val bids: Vector<BinanceDepthBid>,
+        val asks: Vector<BinanceDepthAsk>
 )
 
 data class EventKLineData(
