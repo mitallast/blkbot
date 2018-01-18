@@ -11,6 +11,7 @@ import org.github.mitallast.blkbot.exchanges.binance.*
 import org.github.mitallast.blkbot.exchanges.bittrex.BittrexClient
 import org.github.mitallast.blkbot.exchanges.bittrex.BittrexOrderType
 import org.github.mitallast.blkbot.exchanges.cryptopia.CryptopiaClient
+import org.github.mitallast.blkbot.exchanges.hitbtc.HitbtcClient
 import org.github.mitallast.blkbot.telegram.TelegramBotApi
 import java.net.URI
 import java.util.concurrent.CountDownLatch
@@ -22,7 +23,7 @@ object Main {
         val bot = Bot(config)
         bot.start()
 
-        val pair = ExchangePair("DOT", "BTC")
+        val pair = ExchangePair("BCN", "BTC")
 
 //        val limit = BinanceLimit.limit5
 //        val interval = BinanceInterval.int5m
@@ -58,6 +59,17 @@ object Main {
 //        cryptopia.marketHistory(Option.some(pair)).await().onComplete { r -> println(r) }
 //        cryptopia.marketOrders(pair).await().onComplete { r -> println(r) }
 //        cryptopia.marketOrderGroups(Vector.of(pair)).await().onComplete { r -> println(r) }
+
+//        val hitbtc = bot.injector().getInstance(HitbtcClient::class.java)
+//        hitbtc.currencies().await().onComplete { r -> println(r) }
+//        hitbtc.currency("1ST").await().onComplete { r -> println(r) }
+//        hitbtc.symbols().await().onComplete { r -> println(r) }
+//        hitbtc.symbol(pair).await().onComplete { r -> println(r) }
+//        hitbtc.tickers().await().onComplete { r -> println(r) }
+//        hitbtc.ticker(pair).await().onComplete { r -> println(r) }
+//        hitbtc.trades(pair).await().onComplete { r -> println(r) }
+//        hitbtc.orderBook(pair).await().onComplete { r -> println(r) }
+//        hitbtc.candles(pair).await().onComplete { r -> println(r) }
 
         val countDownLatch = CountDownLatch(1)
         Runtime.getRuntime().addShutdownHook(Thread {
