@@ -183,9 +183,9 @@ class CryptopiaClient @Inject constructor(
 
     private fun <T> sendJson(request: HttpRequest, type: TypeReference<CryptopiaResponse<T>>): Future<T> {
         return send(request).map { response: FullHttpResponse ->
-            logger.info("deserialize {}", response.content().toString(charset))
+            logger.debug("deserialize {}", response.content().toString(charset))
             val mapped: CryptopiaResponse<T> = json.deserialize(response.content(), type)
-            logger.info("response: {}", mapped)
+            logger.debug("response: {}", mapped)
             response.release()
             when {
                 mapped.error != null -> throw CryptopiaException(mapped.error)

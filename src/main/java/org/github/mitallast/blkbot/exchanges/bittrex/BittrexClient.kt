@@ -157,9 +157,9 @@ class BittrexClient @Inject constructor(
 
     private fun <T> sendJson(request: HttpRequest, type: TypeReference<BittrexResponse<T>>): Future<T> {
         return send(request).map { response: FullHttpResponse ->
-            logger.info("deserialize {}", response.content().toString(charset))
+            logger.debug("deserialize {}", response.content().toString(charset))
             val mapped: BittrexResponse<T> = json.deserialize(response.content(), type)
-            logger.info("response: {}", mapped)
+            logger.debug("response: {}", mapped)
             response.release()
             when {
                 mapped.success -> mapped.result!!

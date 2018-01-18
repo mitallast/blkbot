@@ -6,6 +6,7 @@ import io.vavr.collection.Vector
 import io.vavr.control.Option
 import org.github.mitallast.blkbot.common.http.HttpClient
 import org.github.mitallast.blkbot.common.netty.NettyProvider
+import org.github.mitallast.blkbot.exchanges.ExchangeArbitrator
 import org.github.mitallast.blkbot.exchanges.ExchangePair
 import org.github.mitallast.blkbot.exchanges.binance.*
 import org.github.mitallast.blkbot.exchanges.bittrex.BittrexClient
@@ -23,7 +24,8 @@ object Main {
         val bot = Bot(config)
         bot.start()
 
-        val pair = ExchangePair("BTC", "LTC")
+//        val pair = ExchangePair("BTC", "LTC")
+        val pair = ExchangePair("LTC", "ETH")
 
 //        val limit = BinanceLimit.limit5
 //        val interval = BinanceInterval.int5m
@@ -76,6 +78,12 @@ object Main {
 //        hitbtc.trades(pair).await().onComplete { r -> println(r) }
 //        hitbtc.orderBook(pair).await().onComplete { r -> println(r) }
 //        hitbtc.candles(pair).await().onComplete { r -> println(r) }
+
+        val arbitrator = bot.injector().getInstance(ExchangeArbitrator::class.java)
+        arbitrator.compute(1000).await().onComplete { top ->
+            println("top pairs:")
+            top.get().forEach { p -> println("${p.difference}% $p") }
+        }
 
         val countDownLatch = CountDownLatch(1)
         Runtime.getRuntime().addShutdownHook(Thread {
