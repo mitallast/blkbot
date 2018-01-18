@@ -14,6 +14,10 @@ import org.github.mitallast.blkbot.common.http.HttpModule
 import org.github.mitallast.blkbot.common.json.JsonModule
 import org.github.mitallast.blkbot.common.netty.NettyModule
 import org.github.mitallast.blkbot.exchanges.ExchangesModule
+import org.github.mitallast.blkbot.exchanges.binance.BinanceModule
+import org.github.mitallast.blkbot.exchanges.bittrex.BittrexModule
+import org.github.mitallast.blkbot.exchanges.cryptopia.CryptopiaModule
+import org.github.mitallast.blkbot.exchanges.hitbtc.HitbtcModule
 import org.github.mitallast.blkbot.telegram.TelegramModule
 
 class Bot(conf: Config, vararg plugins: AbstractModule) : AbstractLifecycleComponent() {
@@ -32,6 +36,11 @@ class Bot(conf: Config, vararg plugins: AbstractModule) : AbstractLifecycleCompo
         modules.add(HttpModule())
 
         modules.add(ExchangesModule())
+        modules.add(BinanceModule())
+        modules.add(BittrexModule())
+        modules.add(CryptopiaModule())
+        modules.add(HitbtcModule())
+
         modules.add(TelegramModule())
 
         modules.add(*plugins)

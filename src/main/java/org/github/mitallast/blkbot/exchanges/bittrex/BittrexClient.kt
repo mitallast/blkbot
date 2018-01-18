@@ -21,6 +21,9 @@ class BittrexClientException(val code: Int, message: String) : BittrexException(
 class BittrexServerException(val code: Int, message: String) : BittrexException(message)
 class BittrexUnknownException(val code: Int, message: String) : BittrexException(message)
 
+/**
+ * See https://bittrex.com/Home/Api
+ */
 class BittrexClient @Inject constructor(
         private val config: Config,
         private val json: JsonService,

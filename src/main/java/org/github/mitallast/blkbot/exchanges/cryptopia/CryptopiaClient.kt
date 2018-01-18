@@ -21,6 +21,9 @@ class CryptopiaClientException(val code: Int, message: String) : CryptopiaExcept
 class CryptopiaServerException(val code: Int, message: String) : CryptopiaException(message)
 class CryptopiaUnknownException(val code: Int, message: String) : CryptopiaException(message)
 
+/**
+ * See https://www.cryptopia.co.nz/Forum/Thread/255
+ */
 class CryptopiaClient @Inject constructor(
         private val config: Config,
         private val json: JsonService,

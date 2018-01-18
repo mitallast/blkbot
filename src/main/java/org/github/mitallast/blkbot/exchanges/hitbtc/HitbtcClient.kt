@@ -20,6 +20,9 @@ class HitbtcClientException(code: Int, message: String) : HitbtcException(code, 
 class HitbtcServerException(code: Int, message: String) : HitbtcException(code, message)
 class HitbtcUnknownException(code: Int, message: String) : HitbtcException(code, message)
 
+/**
+ * See https://api.hitbtc.com/
+ */
 class HitbtcClient @Inject constructor(
         private val config: Config,
         private val json: JsonService,
