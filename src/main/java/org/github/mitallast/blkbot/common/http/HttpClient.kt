@@ -10,7 +10,6 @@ import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import org.github.mitallast.blkbot.common.netty.NettyProvider
 import java.net.URI
-import java.util.concurrent.TimeUnit
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.pool.ChannelPoolHandler
 import io.netty.channel.pool.FixedChannelPool
@@ -25,8 +24,7 @@ import io.vavr.concurrent.Promise
 import org.apache.logging.log4j.LogManager
 import java.io.Closeable
 import java.nio.channels.ClosedChannelException
-import java.util.concurrent.CancellationException
-import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.*
 import javax.inject.Inject
 
 interface HttpHostClient : Closeable {
@@ -55,7 +53,7 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
         .trustManager(InsecureTrustManagerFactory.INSTANCE)
         .build()
 
-    private val queueAttr = AttributeKey.valueOf<ConcurrentLinkedDeque<Promise<FullHttpResponse>>>("queue")
+    private val queueAttr = AttributeKey.valueOf<ArrayBlockingQueue<Promise<FullHttpResponse>>>("queue")
 
     fun connect(uri: URI): HttpHostClient = PooledHttpHostClient(uri)
 
@@ -94,7 +92,7 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
             override fun channelAcquired(ch: Channel) {}
 
             override fun channelCreated(ch: Channel) {
-                ch.attr(queueAttr).set(ConcurrentLinkedDeque())
+                ch.attr(queueAttr).set(ArrayBlockingQueue(1024))
                 val p = ch.pipeline()
                 if (ssl) {
                     logger.info("use ssl")
@@ -106,7 +104,7 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
                 p.addLast(HttpClientChannelHandler())
             }
         }
-        private val pool = FixedChannelPool(bootstrap, poolHandler, 3, 1)
+        private val pool = FixedChannelPool(bootstrap, poolHandler, 1, 1)
 
         override fun send(request: HttpRequest): Future<FullHttpResponse> {
             logger.debug("send: {}", request)
@@ -121,9 +119,13 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
                     f.isSuccess -> {
                         val ch = f.now as Channel
                         try {
-                            ch.writeAndFlush(request, ch.voidPromise())
-                            val queue = ch.attr(queueAttr).get()
-                            queue.push(promise)
+                            val q = ch.attr(queueAttr).get()
+                            if (q.remainingCapacity() == 0) {
+                                promise.failure(IllegalStateException("queue overflow"))
+                            } else {
+                                ch.writeAndFlush(request, ch.voidPromise())
+                                q.offer(promise)
+                            }
                         } catch (e: Exception) {
                             logger.error("unexpected error", e)
                             promise.failure(e)
@@ -149,14 +151,14 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
                 val cause = ClosedChannelException()
                 val queue = ctx.channel().attr(queueAttr).get()
                 while (queue.isNotEmpty()) {
-                    queue.pop().failure(cause)
+                    queue.poll().failure(cause)
                 }
             }
 
             override fun channelRead0(ctx: ChannelHandlerContext, response: FullHttpResponse) {
                 val queue = ctx.channel().attr(queueAttr).get()
                 logger.debug("response: {}", response)
-                queue.pop().success(response)
+                queue.poll().success(response)
             }
 
             @Suppress("OverridingDeprecatedMember")
@@ -165,7 +167,7 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
                 ctx.close()
                 val queue = ctx.channel().attr(queueAttr).get()
                 while (queue.isNotEmpty()) {
-                    queue.pop().failure(cause)
+                    queue.poll().failure(cause)
                 }
             }
         }
