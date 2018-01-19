@@ -104,7 +104,7 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
                 p.addLast(HttpClientChannelHandler())
             }
         }
-        private val pool = FixedChannelPool(bootstrap, poolHandler, 1, 1)
+        private val pool = FixedChannelPool(bootstrap, poolHandler, 3, 3)
 
         override fun send(request: HttpRequest): Future<FullHttpResponse> {
             logger.debug("send: {}", request)
