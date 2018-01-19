@@ -15,6 +15,8 @@ import org.joda.time.DateTime
 import java.math.BigDecimal
 import java.net.URI
 import java.nio.charset.Charset
+import java.nio.file.Files
+import java.nio.file.Paths
 import javax.inject.Inject
 
 open class BittrexException(message: String) : RuntimeException(message)
@@ -158,13 +160,21 @@ class BittrexClient @Inject constructor(
 
     private fun <T> sendJson(request: HttpRequest, type: TypeReference<BittrexResponse<T>>): Future<T> {
         return send(request).map { response: FullHttpResponse ->
-            logger.debug("deserialize {}", response.content().toString(charset))
-            val mapped: BittrexResponse<T> = json.deserialize(response.content(), type)
-            logger.debug("response: {}", mapped)
-            response.release()
-            when {
-                mapped.success -> mapped.result!!
-                else -> throw BittrexException(mapped.message)
+            try {
+                val mapped: BittrexResponse<T> = json.deserialize(response.content().markReaderIndex(), type)
+                logger.debug("response: {}", mapped)
+                when {
+                    mapped.success -> mapped.result!!
+                    else -> throw BittrexException(mapped.message)
+                }
+            } catch (e: Exception) {
+                val src = response.content().resetReaderIndex().toString(charset)
+                val path = Paths.get("bittrex-${System.currentTimeMillis()}.json")
+                Files.write(path, Vector.of(src), charset)
+                logger.error("error deserialize: $path", e)
+                throw e
+            } finally {
+                response.release()
             }
         }
     }

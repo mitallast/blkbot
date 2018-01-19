@@ -149,14 +149,14 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
                 val cause = ClosedChannelException()
                 val queue = ctx.channel().attr(queueAttr).get()
                 while (queue.isNotEmpty()) {
-                    queue.poll().failure(cause)
+                    queue.pop().failure(cause)
                 }
             }
 
             override fun channelRead0(ctx: ChannelHandlerContext, response: FullHttpResponse) {
                 val queue = ctx.channel().attr(queueAttr).get()
                 logger.debug("response: {}", response)
-                queue.poll().success(response)
+                queue.pop().success(response)
             }
 
             @Suppress("OverridingDeprecatedMember")
@@ -165,7 +165,7 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
                 ctx.close()
                 val queue = ctx.channel().attr(queueAttr).get()
                 while (queue.isNotEmpty()) {
-                    queue.poll().failure(cause)
+                    queue.pop().failure(cause)
                 }
             }
         }

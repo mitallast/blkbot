@@ -38,7 +38,9 @@ class ExchangeArbitratorWorker @Inject constructor(
             history.save(System.currentTimeMillis(), top)
 
             logger.info("top pairs:")
-            top.forEach { p -> logger.info("${p.difference}% $p") }
+            top.forEach { p -> logger.info("${p.difference}% ${p.pair} " +
+                "${p.leftExchange}/${p.rightExchange} " +
+                "${p.leftPrice}/${p.rightPrice}") }
         } catch (e: Exception) {
             logger.error("error run arbitrator", e)
         }

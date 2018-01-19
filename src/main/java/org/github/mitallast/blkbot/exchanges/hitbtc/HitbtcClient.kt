@@ -14,6 +14,8 @@ import org.joda.time.DateTime
 import java.math.BigDecimal
 import java.net.URI
 import java.nio.charset.Charset
+import java.nio.file.Files
+import java.nio.file.Paths
 import javax.inject.Inject
 
 open class HitbtcException(val code: Int, message: String) : RuntimeException(message)
@@ -204,11 +206,19 @@ class HitbtcClient @Inject constructor(
 
     private fun <T> sendJson(request: HttpRequest, type: TypeReference<T>): Future<T> {
         return send(request).map { response: FullHttpResponse ->
-            logger.debug("deserialize {}", response.content().toString(charset))
-            val mapped: T = json.deserialize(response.content(), type)
-            logger.debug("response: {}", mapped)
-            response.release()
-            mapped
+            try {
+                val mapped: T = json.deserialize(response.content().markReaderIndex(), type)
+                logger.debug("response: {}", mapped)
+                mapped
+            } catch (e: Exception) {
+                val src = response.content().resetReaderIndex().toString(charset)
+                val path = Paths.get("hitbtc-${System.currentTimeMillis()}.json")
+                Files.write(path, Vector.of(src), charset)
+                logger.error("error deserialize: $path", e)
+                throw e
+            } finally {
+                response.release()
+            }
         }
     }
 }

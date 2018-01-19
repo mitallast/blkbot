@@ -15,6 +15,8 @@ import org.github.mitallast.blkbot.exchanges.ExchangePair
 import java.math.BigDecimal
 import java.net.URI
 import java.nio.charset.Charset
+import java.nio.file.Files
+import java.nio.file.Paths
 import javax.inject.Inject
 
 open class CryptopiaException(message: String) : RuntimeException(message)
@@ -184,14 +186,22 @@ class CryptopiaClient @Inject constructor(
 
     private fun <T> sendJson(request: HttpRequest, type: TypeReference<CryptopiaResponse<T>>): Future<T> {
         return send(request).map { response: FullHttpResponse ->
-            logger.debug("deserialize {}", response.content().toString(charset))
-            val mapped: CryptopiaResponse<T> = json.deserialize(response.content(), type)
-            logger.debug("response: {}", mapped)
-            response.release()
-            when {
-                mapped.error != null -> throw CryptopiaException(mapped.error)
-                mapped.success -> mapped.result!!
-                else -> throw CryptopiaException("unexpected exception")
+            try {
+                val mapped: CryptopiaResponse<T> = json.deserialize(response.content().markReaderIndex(), type)
+                logger.debug("response: {}", mapped)
+                when {
+                    mapped.error != null -> throw CryptopiaException(mapped.error)
+                    mapped.success -> mapped.result!!
+                    else -> throw CryptopiaException("unexpected exception")
+                }
+            } catch (e: Exception) {
+                val src = response.content().resetReaderIndex().toString(charset)
+                val path = Paths.get("cryptopia-${System.currentTimeMillis()}.json")
+                Files.write(path, Vector.of(src), charset)
+                logger.error("error deserialize: $path", e)
+                throw e
+            } finally {
+                response.release()
             }
         }
     }
@@ -210,7 +220,7 @@ data class CryptopiaCurrency(
     @JsonProperty("Name") val name: String,
     @JsonProperty("Symbol") val symbol: String,
     @JsonProperty("Algorithm") val algorithm: String,
-    @JsonProperty("WothdrawFee") val withdrawFee: BigDecimal,
+    @JsonProperty("WithdrawFee") val withdrawFee: BigDecimal,
     @JsonProperty("MinWithdraw") val minWithdraw: BigDecimal,
     @JsonProperty("MinBaseTrade") val minBaseTrade: BigDecimal,
     @JsonProperty("IsTipEnabled") val isTipEnabled: Boolean,
@@ -225,9 +235,9 @@ data class CryptopiaCurrency(
 data class CryptopiaTradePair(
     @JsonProperty("Id") val id: Long,
     @JsonProperty("Label") val label: String,
-    @JsonProperty("Currency") val currency: String?,
+    @JsonProperty("Currency") val currency: String,
     @JsonProperty("Symbol") val symbol: String,
-    @JsonProperty("BaseCurrency") val baseCurrency: String?,
+    @JsonProperty("BaseCurrency") val baseCurrency: String,
     @JsonProperty("BaseSymbol") val baseSymbol: String,
     @JsonProperty("Status") val status: String,
     @JsonProperty("StatusMessage") val statusMessage: String?,
