@@ -1,5 +1,6 @@
 package org.github.mitallast.blkbot.exchanges.binance
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.type.TypeReference
 import com.typesafe.config.Config
@@ -317,7 +318,7 @@ class BinanceClient @Inject constructor(
 
     private fun <T> sendJson(request: HttpRequest, type: TypeReference<T>): Future<T> {
         return send(request).map { response: FullHttpResponse ->
-            logger.debug("deserialize {}", response.content().toString(charset))
+            logger.info("deserialize {}", response.content().toString(charset))
             val mapped: T = json.deserialize(response.content(), type)
             logger.debug("response: {}", mapped)
             response.release()
@@ -377,11 +378,11 @@ object BinancePong
 
 data class BinanceTime(val serverTime: Long)
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class BinanceExchangeInfo(
     val timezone: String,
     val serverTime: Long,
     val rateLimits: Vector<BinanceRateLimitInfo>,
-    val exchangeFilters: Vector<Any>,
     val symbols: Vector<BinanceSymbolInfo>
 )
 
@@ -391,6 +392,7 @@ data class BinanceRateLimitInfo(
     val limit: Long
 )
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class BinanceSymbolInfo(
     val symbol: String,
     val status: String,
@@ -399,8 +401,7 @@ data class BinanceSymbolInfo(
     val quoteAsset: String,
     val quotePrecision: Int,
     val orderTypes: Vector<String>,
-    val icebergAllowed: Boolean,
-    val filters: Vector<Any>
+    val icebergAllowed: Boolean
 )
 
 
