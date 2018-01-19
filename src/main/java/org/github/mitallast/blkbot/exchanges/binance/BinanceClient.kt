@@ -15,6 +15,7 @@ import org.github.mitallast.blkbot.common.http.HttpClient
 import org.github.mitallast.blkbot.common.http.WebSocketListener
 import org.github.mitallast.blkbot.common.json.JsonService
 import org.github.mitallast.blkbot.exchanges.ExchangePair
+import java.math.BigDecimal
 import java.net.URI
 import java.nio.charset.Charset
 import javax.inject.Inject
@@ -74,9 +75,9 @@ annotation class BinanceWeight(val value: Int)
  * See https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md
  */
 class BinanceClient @Inject constructor(
-        private val config: Config,
-        private val json: JsonService,
-        private val http: HttpClient
+    private val config: Config,
+    private val json: JsonService,
+    private val http: HttpClient
 ) {
     private val logger = LogManager.getLogger()
 
@@ -128,7 +129,7 @@ class BinanceClient @Inject constructor(
             throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100")
         }
         val uri = "/api/v1/depth?symbol=${pair.symbol()}" +
-                Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
+            Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -144,7 +145,7 @@ class BinanceClient @Inject constructor(
             throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100, 500")
         }
         val uri = "/api/v1/trades?symbol=${pair.symbol()}" +
-                Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
+            Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -160,8 +161,8 @@ class BinanceClient @Inject constructor(
             throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100, 500")
         }
         val uri = "/api/v1/historicalTrades?symbol=${pair.symbol()}" +
-                Option.of(fromId).map { f -> "&fromId=$f" }.getOrElse("") +
-                Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
+            Option.of(fromId).map { f -> "&fromId=$f" }.getOrElse("") +
+            Option.of(limit).map { l -> "&limit=${l?.value}" }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -176,19 +177,19 @@ class BinanceClient @Inject constructor(
      */
     @BinanceWeight(2)
     fun aggTrades(
-            pair: ExchangePair,
-            fromId: Long? = null,
-            startTime: Long? = null,
-            endTime: Long? = null,
-            limit: BinanceLimit? = null): Future<Vector<BinanceAggTrades>> {
+        pair: ExchangePair,
+        fromId: Long? = null,
+        startTime: Long? = null,
+        endTime: Long? = null,
+        limit: BinanceLimit? = null): Future<Vector<BinanceAggTrades>> {
         if (limit != null && limit.greaterThan(BinanceLimit.limit500)) {
             throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100, 500")
         }
         val uri = "/api/v1/aggTrades?symbol=${pair.symbol()}" +
-                Option.of(fromId).map { i -> "&fromId=$i" }.getOrElse("") +
-                Option.of(startTime).map { i -> "&startTime=$i" }.getOrElse("") +
-                Option.of(endTime).map { i -> "&endTime=$i" }.getOrElse("") +
-                Option.of(limit).map { i -> "&limit=${i!!.value}" }.getOrElse("")
+            Option.of(fromId).map { i -> "&fromId=$i" }.getOrElse("") +
+            Option.of(startTime).map { i -> "&startTime=$i" }.getOrElse("") +
+            Option.of(endTime).map { i -> "&endTime=$i" }.getOrElse("") +
+            Option.of(limit).map { i -> "&limit=${i!!.value}" }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -200,19 +201,19 @@ class BinanceClient @Inject constructor(
      */
     @BinanceWeight(2)
     fun klines(
-            pair: ExchangePair,
-            interval: BinanceInterval,
-            startTime: Long? = null,
-            endTime: Long? = null,
-            limit: BinanceLimit? = null
+        pair: ExchangePair,
+        interval: BinanceInterval,
+        startTime: Long? = null,
+        endTime: Long? = null,
+        limit: BinanceLimit? = null
     ): Future<Vector<BinanceCandlestick>> {
         if (limit != null && limit.greaterThan(BinanceLimit.limit500)) {
             throw IllegalArgumentException("limit must be 5, 10, 20, 50, 100, 500")
         }
         val uri = "/api/v1/klines?symbol=${pair.symbol()}&interval=${interval.value}" +
-                Option.of(startTime).map { i -> "&startTime=$i" }.getOrElse("") +
-                Option.of(endTime).map { i -> "&endTime=$i" }.getOrElse("") +
-                Option.of(limit).map { i -> "&limit=${i!!.value}" }.getOrElse("")
+            Option.of(startTime).map { i -> "&startTime=$i" }.getOrElse("") +
+            Option.of(endTime).map { i -> "&endTime=$i" }.getOrElse("") +
+            Option.of(limit).map { i -> "&limit=${i!!.value}" }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -220,17 +221,17 @@ class BinanceClient @Inject constructor(
         return sendJson(request, ref).map { klines ->
             klines.map { tuple ->
                 BinanceCandlestick(
-                        tuple[0].toLong(),
-                        tuple[1].toDouble(),
-                        tuple[2].toDouble(),
-                        tuple[3].toDouble(),
-                        tuple[4].toDouble(),
-                        tuple[5].toDouble(),
-                        tuple[6].toLong(),
-                        tuple[7].toDouble(),
-                        tuple[8].toLong(),
-                        tuple[9].toDouble(),
-                        tuple[10].toDouble()
+                    tuple[0].toLong(),
+                    tuple[1].toBigDecimal(),
+                    tuple[2].toBigDecimal(),
+                    tuple[3].toBigDecimal(),
+                    tuple[4].toBigDecimal(),
+                    tuple[5].toBigDecimal(),
+                    tuple[6].toLong(),
+                    tuple[7].toBigDecimal(),
+                    tuple[8].toLong(),
+                    tuple[9].toBigDecimal(),
+                    tuple[10].toBigDecimal()
                 )
             }
         }
@@ -316,9 +317,9 @@ class BinanceClient @Inject constructor(
 
     private fun <T> sendJson(request: HttpRequest, type: TypeReference<T>): Future<T> {
         return send(request).map { response: FullHttpResponse ->
-            logger.info("deserialize {}", response.content().toString(charset))
+            logger.debug("deserialize {}", response.content().toString(charset))
             val mapped: T = json.deserialize(response.content(), type)
-            logger.info("response: {}", mapped)
+            logger.debug("response: {}", mapped)
             response.release()
             mapped
         }
@@ -357,7 +358,7 @@ class BinanceClient @Inject constructor(
                 when (frame) {
                     is TextWebSocketFrame -> {
                         val event = json.deserialize(frame.content(), type)
-                        logger.info("event: $event")
+                        logger.debug("event: $event")
                         listener.handle(event)
                     }
                 }
@@ -377,178 +378,178 @@ object BinancePong
 data class BinanceTime(val serverTime: Long)
 
 data class BinanceExchangeInfo(
-        val timezone: String,
-        val serverTime: Long,
-        val rateLimits: Vector<BinanceRateLimitInfo>,
-        val exchangeFilters: Vector<Any>,
-        val symbols: Vector<BinanceSymbolInfo>
+    val timezone: String,
+    val serverTime: Long,
+    val rateLimits: Vector<BinanceRateLimitInfo>,
+    val exchangeFilters: Vector<Any>,
+    val symbols: Vector<BinanceSymbolInfo>
 )
 
 data class BinanceRateLimitInfo(
-        val rateLimitType: String,
-        val interval: String,
-        val limit: Long
+    val rateLimitType: String,
+    val interval: String,
+    val limit: Long
 )
 
 data class BinanceSymbolInfo(
-        val symbol: String,
-        val status: String,
-        val baseAsset: String,
-        val baseAssetPrecision: Int,
-        val quoteAsset: String,
-        val quotePrecision: Int,
-        val orderTypes: Vector<String>,
-        val icebergAllowed: Boolean,
-        val filters: Vector<Any>
+    val symbol: String,
+    val status: String,
+    val baseAsset: String,
+    val baseAssetPrecision: Int,
+    val quoteAsset: String,
+    val quotePrecision: Int,
+    val orderTypes: Vector<String>,
+    val icebergAllowed: Boolean,
+    val filters: Vector<Any>
 )
 
 
 data class BinanceDepthRaw(
-        val lastUpdateId: Long,
-        val bids: Vector<Tuple3<Double, Double, List<String>>>,
-        val asks: Vector<Tuple3<Double, Double, List<String>>>
+    val lastUpdateId: Long,
+    val bids: Vector<Tuple3<BigDecimal, BigDecimal, List<String>>>,
+    val asks: Vector<Tuple3<BigDecimal, BigDecimal, List<String>>>
 ) {
     fun map(): BinanceDepth {
         return BinanceDepth(
-                lastUpdateId,
-                bids.map { bid -> BinanceDepthBid(bid._1, bid._2) },
-                asks.map { ask -> BinanceDepthAsk(ask._1, ask._2) }
+            lastUpdateId,
+            bids.map { bid -> BinanceDepthBid(bid._1, bid._2) },
+            asks.map { ask -> BinanceDepthAsk(ask._1, ask._2) }
         )
     }
 }
 
-data class BinanceDepthBid(val price: Double, val quantity: Double) {
+data class BinanceDepthBid(val price: BigDecimal, val quantity: BigDecimal) {
     override fun toString(): String = "{$price,$quantity}"
 }
 
-data class BinanceDepthAsk(val price: Double, val quantity: Double) {
+data class BinanceDepthAsk(val price: BigDecimal, val quantity: BigDecimal) {
     override fun toString(): String = "{$price,$quantity}"
 }
 
 data class BinanceDepth(val lastUpdateId: Long, val bids: Vector<BinanceDepthBid>, val asks: Vector<BinanceDepthAsk>)
 
 data class BinanceTrade(
-        val id: Long,
-        val price: Double,
-        val qty: Double,
-        val time: Long,
-        val isBuyerMaker: Boolean,
-        val isBestMatch: Boolean
+    val id: Long,
+    val price: BigDecimal,
+    val qty: BigDecimal,
+    val time: Long,
+    val isBuyerMaker: Boolean,
+    val isBestMatch: Boolean
 )
 
 data class BinanceAggTrades(
-        @JsonProperty("a") val tradeId: Long,
-        @JsonProperty("p") val price: Double,
-        @JsonProperty("q") val quantity: Double,
-        @JsonProperty("f") val firstTradeId: Long,
-        @JsonProperty("l") val lastTradeId: Long,
-        @JsonProperty("T") val timestamp: Long,
-        @JsonProperty("m") val isBuyerMaker: Boolean,
-        @JsonProperty("M") val isTradeBestPriceMatch: Boolean
+    @JsonProperty("a") val tradeId: Long,
+    @JsonProperty("p") val price: BigDecimal,
+    @JsonProperty("q") val quantity: BigDecimal,
+    @JsonProperty("f") val firstTradeId: Long,
+    @JsonProperty("l") val lastTradeId: Long,
+    @JsonProperty("T") val timestamp: Long,
+    @JsonProperty("m") val isBuyerMaker: Boolean,
+    @JsonProperty("M") val isTradeBestPriceMatch: Boolean
 )
 
 data class BinanceCandlestick(
-        val openTime: Long,
-        val open: Double,
-        val high: Double,
-        val low: Double,
-        val close: Double,
-        val volume: Double,
-        val closeTime: Long,
-        val quoteAssetVolume: Double,
-        val numberOfTrades: Long,
-        val takerBuyBaseAssetVolume: Double,
-        val takerBuyQuoteAssetVolume: Double
+    val openTime: Long,
+    val open: BigDecimal,
+    val high: BigDecimal,
+    val low: BigDecimal,
+    val close: BigDecimal,
+    val volume: BigDecimal,
+    val closeTime: Long,
+    val quoteAssetVolume: BigDecimal,
+    val numberOfTrades: Long,
+    val takerBuyBaseAssetVolume: BigDecimal,
+    val takerBuyQuoteAssetVolume: BigDecimal
 )
 
 data class BinancePriceChangeStatistics(
-        val symbol: String,
-        val priceChange: Double,
-        val priceChangePercent: Double,
-        val weightedAvgPrice: Double,
-        val prevClosePrice: Double,
-        val lastPrice: Double,
-        val lastQty: Double,
-        val bidPrice: Double,
-        val bidQty: Double,
-        val askPrice: Double,
-        val askQty: Double,
-        val openPrice: Double,
-        val highPrice: Double,
-        val lowPrice: Double,
-        val volume: Double,
-        val quoteVolume: Double,
-        val openTime: Long,
-        val closeTime: Long,
-        val firstId: Long,
-        val lastId: Long,
-        val count: Long
+    val symbol: String,
+    val priceChange: BigDecimal,
+    val priceChangePercent: BigDecimal,
+    val weightedAvgPrice: BigDecimal,
+    val prevClosePrice: BigDecimal,
+    val lastPrice: BigDecimal,
+    val lastQty: BigDecimal,
+    val bidPrice: BigDecimal,
+    val bidQty: BigDecimal,
+    val askPrice: BigDecimal,
+    val askQty: BigDecimal,
+    val openPrice: BigDecimal,
+    val highPrice: BigDecimal,
+    val lowPrice: BigDecimal,
+    val volume: BigDecimal,
+    val quoteVolume: BigDecimal,
+    val openTime: Long,
+    val closeTime: Long,
+    val firstId: Long,
+    val lastId: Long,
+    val count: Long
 )
 
-data class BinanceLastPrice(val symbol: String, val price: Double)
+data class BinanceLastPrice(val symbol: String, val price: BigDecimal)
 
 data class EventDepthRaw(
-        @JsonProperty("e") val eventType: String,
-        @JsonProperty("E") val eventTime: Long,
-        @JsonProperty("s") val symbol: String,
-        @JsonProperty("u") val updateId: Long,
-        @JsonProperty("b") val bids: Vector<Tuple3<Double, Double, List<String>>>,
-        @JsonProperty("a") val asks: Vector<Tuple3<Double, Double, List<String>>>
+    @JsonProperty("e") val eventType: String,
+    @JsonProperty("E") val eventTime: Long,
+    @JsonProperty("s") val symbol: String,
+    @JsonProperty("u") val updateId: Long,
+    @JsonProperty("b") val bids: Vector<Tuple3<BigDecimal, BigDecimal, List<String>>>,
+    @JsonProperty("a") val asks: Vector<Tuple3<BigDecimal, BigDecimal, List<String>>>
 ) {
     fun map(): EventDepth = EventDepth(
-            eventTime = eventTime,
-            symbol = symbol,
-            updateId = updateId,
-            bids = bids.map { bid -> BinanceDepthBid(bid._1, bid._2) },
-            asks = asks.map { ask -> BinanceDepthAsk(ask._1, ask._2) }
+        eventTime = eventTime,
+        symbol = symbol,
+        updateId = updateId,
+        bids = bids.map { bid -> BinanceDepthBid(bid._1, bid._2) },
+        asks = asks.map { ask -> BinanceDepthAsk(ask._1, ask._2) }
     )
 }
 
 data class EventDepth(
-        val eventTime: Long,
-        val symbol: String,
-        val updateId: Long,
-        val bids: Vector<BinanceDepthBid>,
-        val asks: Vector<BinanceDepthAsk>
+    val eventTime: Long,
+    val symbol: String,
+    val updateId: Long,
+    val bids: Vector<BinanceDepthBid>,
+    val asks: Vector<BinanceDepthAsk>
 )
 
 data class EventKLineData(
-        @JsonProperty("t") val startTime: Long,
-        @JsonProperty("T") val endTime: Long,
-        @JsonProperty("s") val symbol: String,
-        @JsonProperty("i") val interval: String,
-        @JsonProperty("f") val firstTradeId: Long,
-        @JsonProperty("L") val lastTradeId: Long,
-        @JsonProperty("o") val open: Double,
-        @JsonProperty("c") val close: Double,
-        @JsonProperty("h") val high: Double,
-        @JsonProperty("l") val low: Double,
-        @JsonProperty("v") val volume: Double,
-        @JsonProperty("n") val numberOfTrades: Long,
-        @JsonProperty("x") val isBarFinal: Boolean,
-        @JsonProperty("q") val quoteVolume: Double,
-        @JsonProperty("V") val volumeOfActiveBuy: Double,
-        @JsonProperty("Q") val quoteVolumeOfActiveBuy: Double,
-        @JsonProperty("B") val ignored: Double
+    @JsonProperty("t") val startTime: Long,
+    @JsonProperty("T") val endTime: Long,
+    @JsonProperty("s") val symbol: String,
+    @JsonProperty("i") val interval: String,
+    @JsonProperty("f") val firstTradeId: Long,
+    @JsonProperty("L") val lastTradeId: Long,
+    @JsonProperty("o") val open: BigDecimal,
+    @JsonProperty("c") val close: BigDecimal,
+    @JsonProperty("h") val high: BigDecimal,
+    @JsonProperty("l") val low: BigDecimal,
+    @JsonProperty("v") val volume: BigDecimal,
+    @JsonProperty("n") val numberOfTrades: Long,
+    @JsonProperty("x") val isBarFinal: Boolean,
+    @JsonProperty("q") val quoteVolume: BigDecimal,
+    @JsonProperty("V") val volumeOfActiveBuy: BigDecimal,
+    @JsonProperty("Q") val quoteVolumeOfActiveBuy: BigDecimal,
+    @JsonProperty("B") val ignored: BigDecimal
 )
 
 data class EventKLine(
-        @JsonProperty("e") val eventType: String,
-        @JsonProperty("E") val eventTime: Long,
-        @JsonProperty("s") val symbol: String,
-        @JsonProperty("k") val data: EventKLineData
+    @JsonProperty("e") val eventType: String,
+    @JsonProperty("E") val eventTime: Long,
+    @JsonProperty("s") val symbol: String,
+    @JsonProperty("k") val data: EventKLineData
 )
 
 data class EventTrades(
-        @JsonProperty("e") val eventType: String,
-        @JsonProperty("E") val eventTime: Long,
-        @JsonProperty("s") val symbol: String,
-        @JsonProperty("a") val aggTradeId: Long,
-        @JsonProperty("p") val price: Double,
-        @JsonProperty("q") val quantity: Double,
-        @JsonProperty("f") val firstBreakdownTradeId: Long,
-        @JsonProperty("l") val lastBreakdownTradeId: Long,
-        @JsonProperty("T") val tradeTime: Long,
-        @JsonProperty("m") val buyerIsMaker: Boolean,
-        @JsonProperty("M") val ignore: Boolean
+    @JsonProperty("e") val eventType: String,
+    @JsonProperty("E") val eventTime: Long,
+    @JsonProperty("s") val symbol: String,
+    @JsonProperty("a") val aggTradeId: Long,
+    @JsonProperty("p") val price: BigDecimal,
+    @JsonProperty("q") val quantity: BigDecimal,
+    @JsonProperty("f") val firstBreakdownTradeId: Long,
+    @JsonProperty("l") val lastBreakdownTradeId: Long,
+    @JsonProperty("T") val tradeTime: Long,
+    @JsonProperty("m") val buyerIsMaker: Boolean,
+    @JsonProperty("M") val ignore: Boolean
 )

@@ -25,6 +25,8 @@ class ExchangesModule : AbstractModule() {
         providers.addBinding().to(CryptopiaTradeProvider::class.java).asEagerSingleton()
         providers.addBinding().to(HitbtcTradeProvider::class.java).asEagerSingleton()
 
+        bind(ExchangeArbitrationHistory::class.java).asEagerSingleton()
         bind(ExchangeArbitrator::class.java).asEagerSingleton()
+        bind(ExchangeArbitratorWorker::class.java).asEagerSingleton()
     }
 }

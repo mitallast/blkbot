@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager
 import org.github.mitallast.blkbot.common.http.HttpClient
 import org.github.mitallast.blkbot.common.json.JsonService
 import org.github.mitallast.blkbot.exchanges.ExchangePair
+import java.math.BigDecimal
 import java.net.URI
 import java.nio.charset.Charset
 import javax.inject.Inject
@@ -25,9 +26,9 @@ class CryptopiaUnknownException(val code: Int, message: String) : CryptopiaExcep
  * See https://www.cryptopia.co.nz/Forum/Thread/255
  */
 class CryptopiaClient @Inject constructor(
-        private val config: Config,
-        private val json: JsonService,
-        private val http: HttpClient
+    private val config: Config,
+    private val json: JsonService,
+    private val http: HttpClient
 ) {
     private val logger = LogManager.getLogger()
 
@@ -63,12 +64,12 @@ class CryptopiaClient @Inject constructor(
      * Returns all market data.
      */
     fun markets(
-            symbol: Option<String> = Option.none(),
-            hours: Option<Int> = Option.none()
+        symbol: Option<String> = Option.none(),
+        hours: Option<Int> = Option.none()
     ): Future<Vector<CryptopiaMarket>> {
         val url = "/api/GetMarkets" +
-                symbol.map { s -> "/" + s }.getOrElse("") +
-                hours.map { h -> "/" + h }.getOrElse("")
+            symbol.map { s -> "/" + s }.getOrElse("") +
+            hours.map { h -> "/" + h }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -80,12 +81,12 @@ class CryptopiaClient @Inject constructor(
      * Returns market data for the specified trade pair
      */
     fun market(
-            pair: ExchangePair,
-            hours: Option<Int> = Option.none()
+        pair: ExchangePair,
+        hours: Option<Int> = Option.none()
     ): Future<CryptopiaMarket> {
         val url = "/api/GetMarket/" +
-                pair.symbol('_') +
-                hours.map { h -> "/" + h }.getOrElse("")
+            pair.symbol('_') +
+            hours.map { h -> "/" + h }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -97,12 +98,12 @@ class CryptopiaClient @Inject constructor(
      * Returns the market history data for the specified trade pair.
      */
     fun marketHistory(
-            pair: Option<ExchangePair> = Option.none(),
-            hours: Option<Int> = Option.none()
+        pair: Option<ExchangePair> = Option.none(),
+        hours: Option<Int> = Option.none()
     ): Future<Vector<CryptopiaMarketHistory>> {
         val url = "/api/GetMarketHistory" +
-                pair.map { p -> "/" + p.symbol('_') }.getOrElse("") +
-                hours.map { h -> "/" + h }.getOrElse("")
+            pair.map { p -> "/" + p.symbol('_') }.getOrElse("") +
+            hours.map { h -> "/" + h }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -114,12 +115,12 @@ class CryptopiaClient @Inject constructor(
      * Returns the open buy and sell orders for the specified trade pair.
      */
     fun marketOrders(
-            pair: ExchangePair,
-            hours: Option<Int> = Option.none()
+        pair: ExchangePair,
+        hours: Option<Int> = Option.none()
     ): Future<CryptopiaOrderBook> {
         val url = "/api/GetMarketOrders/" +
-                pair.symbol('_') +
-                hours.map { h -> "/" + h }.getOrElse("")
+            pair.symbol('_') +
+            hours.map { h -> "/" + h }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -131,12 +132,12 @@ class CryptopiaClient @Inject constructor(
      * Returns the open buy and sell orders for the specified markets.
      */
     fun marketOrderGroups(
-            pairs: Vector<ExchangePair>,
-            orderCount: Option<Int> = Option.none()
+        pairs: Vector<ExchangePair>,
+        orderCount: Option<Int> = Option.none()
     ): Future<Vector<CryptopiaOrderGroup>> {
         val url = "/api/GetMarketOrderGroups/" +
-                pairs.map { p -> p.symbol('_') }.mkString("-") + '/' +
-                orderCount.map { h -> "/" + h }.getOrElse("")
+            pairs.map { p -> p.symbol('_') }.mkString("-") + '/' +
+            orderCount.map { h -> "/" + h }.getOrElse("")
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url)
         request.headers().set(HttpHeaderNames.HOST, host)
         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
@@ -197,103 +198,103 @@ class CryptopiaClient @Inject constructor(
 }
 
 data class CryptopiaResponse<out T>(
-        @JsonProperty("Success") val success: Boolean,
-        @JsonProperty("Message") val message: String?,
-        @JsonProperty("Error") val error: String?,
-        @JsonProperty("Data") val result: T?
+    @JsonProperty("Success") val success: Boolean,
+    @JsonProperty("Message") val message: String?,
+    @JsonProperty("Error") val error: String?,
+    @JsonProperty("Data") val result: T?
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class CryptopiaCurrency(
-        @JsonProperty("Id") val id: Long,
-        @JsonProperty("Name") val name: String,
-        @JsonProperty("Symbol") val symbol: String,
-        @JsonProperty("Algorithm") val algorithm: String,
-        @JsonProperty("WothdrawFee") val withdrawFee: Double,
-        @JsonProperty("MinWithdraw") val minWithdraw: Double,
-        @JsonProperty("MinBaseTrade") val minBaseTrade: Double,
-        @JsonProperty("IsTipEnabled") val isTipEnabled: Boolean,
-        @JsonProperty("MinTip") val minTip: Double,
-        @JsonProperty("DepositConfirmations") val depositConfirmations: Int,
-        @JsonProperty("Status") val status: String,
-        @JsonProperty("StatusMessage") val statusMessage: String?,
-        @JsonProperty("ListingStatus") val listingStatus: String
+    @JsonProperty("Id") val id: Long,
+    @JsonProperty("Name") val name: String,
+    @JsonProperty("Symbol") val symbol: String,
+    @JsonProperty("Algorithm") val algorithm: String,
+    @JsonProperty("WothdrawFee") val withdrawFee: BigDecimal,
+    @JsonProperty("MinWithdraw") val minWithdraw: BigDecimal,
+    @JsonProperty("MinBaseTrade") val minBaseTrade: BigDecimal,
+    @JsonProperty("IsTipEnabled") val isTipEnabled: Boolean,
+    @JsonProperty("MinTip") val minTip: BigDecimal,
+    @JsonProperty("DepositConfirmations") val depositConfirmations: Int,
+    @JsonProperty("Status") val status: String,
+    @JsonProperty("StatusMessage") val statusMessage: String?,
+    @JsonProperty("ListingStatus") val listingStatus: String
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class CryptopiaTradePair(
-        @JsonProperty("Id") val id: Long,
-        @JsonProperty("Label") val label: String,
-        @JsonProperty("Currency") val currency: String,
-        @JsonProperty("Symbol") val symbol: String,
-        @JsonProperty("BaseCurrency") val baseCurrency: String,
-        @JsonProperty("BaseSymbol") val baseSymbol: String,
-        @JsonProperty("Status") val status: String,
-        @JsonProperty("StatusMessage") val statusMessage: String?,
-        @JsonProperty("TradeFee") val tradeFee: Double,
-        @JsonProperty("MinimumTrade") val minTrade: Double,
-        @JsonProperty("MaximumTrade") val maxTrade: Double,
-        @JsonProperty("MinimumBaseTrade") val minBaseTrade: Double,
-        @JsonProperty("MaximumBaseTrade") val maxBaseTrade: Double,
-        @JsonProperty("MinimumPrice") val minPrice: Double,
-        @JsonProperty("MaximumPrice") val maxPrice: Double
+    @JsonProperty("Id") val id: Long,
+    @JsonProperty("Label") val label: String,
+    @JsonProperty("Currency") val currency: String?,
+    @JsonProperty("Symbol") val symbol: String,
+    @JsonProperty("BaseCurrency") val baseCurrency: String?,
+    @JsonProperty("BaseSymbol") val baseSymbol: String,
+    @JsonProperty("Status") val status: String,
+    @JsonProperty("StatusMessage") val statusMessage: String?,
+    @JsonProperty("TradeFee") val tradeFee: BigDecimal,
+    @JsonProperty("MinimumTrade") val minTrade: BigDecimal,
+    @JsonProperty("MaximumTrade") val maxTrade: BigDecimal,
+    @JsonProperty("MinimumBaseTrade") val minBaseTrade: BigDecimal,
+    @JsonProperty("MaximumBaseTrade") val maxBaseTrade: BigDecimal,
+    @JsonProperty("MinimumPrice") val minPrice: BigDecimal,
+    @JsonProperty("MaximumPrice") val maxPrice: BigDecimal
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class CryptopiaMarket(
-        @JsonProperty("TradePairId") val tradePairId: Long,
-        @JsonProperty("Label") val label: String,
-        @JsonProperty("AskPrice") val ask: Double,
-        @JsonProperty("BidPrice") val bid: Double,
-        @JsonProperty("Low") val low: Double,
-        @JsonProperty("High") val high: Double,
-        @JsonProperty("Volume") val volume: Double,
-        @JsonProperty("LastPrice") val last: Double,
-        @JsonProperty("BuyVolume") val buyVolume: Double,
-        @JsonProperty("SellVolume") val sellVolume: Double,
-        @JsonProperty("Change") val change: Double,
-        @JsonProperty("Open") val open: Double,
-        @JsonProperty("Close") val close: Double,
-        @JsonProperty("BaseVolume") val baseVolume: Double,
-        @JsonProperty("BaseBuyVolume") val baseBuyVolume: Double,
-        @JsonProperty("BaseSellVolume") val baseSellVolume: Double
+    @JsonProperty("TradePairId") val tradePairId: Long,
+    @JsonProperty("Label") val label: String,
+    @JsonProperty("AskPrice") val ask: BigDecimal,
+    @JsonProperty("BidPrice") val bid: BigDecimal,
+    @JsonProperty("Low") val low: BigDecimal,
+    @JsonProperty("High") val high: BigDecimal,
+    @JsonProperty("Volume") val volume: BigDecimal,
+    @JsonProperty("LastPrice") val last: BigDecimal,
+    @JsonProperty("BuyVolume") val buyVolume: BigDecimal,
+    @JsonProperty("SellVolume") val sellVolume: BigDecimal,
+    @JsonProperty("Change") val change: BigDecimal,
+    @JsonProperty("Open") val open: BigDecimal,
+    @JsonProperty("Close") val close: BigDecimal,
+    @JsonProperty("BaseVolume") val baseVolume: BigDecimal,
+    @JsonProperty("BaseBuyVolume") val baseBuyVolume: BigDecimal?,
+    @JsonProperty("BaseSellVolume") val baseSellVolume: BigDecimal?
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class CryptopiaMarketHistory(
-        @JsonProperty("TradePairId") val id: Long,
-        @JsonProperty("Label") val label: String,
-        @JsonProperty("Type") val type: String,
-        @JsonProperty("Price") val price: Double,
-        @JsonProperty("Amount") val amount: Double,
-        @JsonProperty("Total") val total: Double,
-        @JsonProperty("Timestamp") val timestamp: Long
+    @JsonProperty("TradePairId") val id: Long,
+    @JsonProperty("Label") val label: String,
+    @JsonProperty("Type") val type: String,
+    @JsonProperty("Price") val price: BigDecimal,
+    @JsonProperty("Amount") val amount: BigDecimal,
+    @JsonProperty("Total") val total: BigDecimal,
+    @JsonProperty("Timestamp") val timestamp: Long
 )
 
 data class CryptopiaOrderBookBuy(
-        @JsonProperty("TradePairId") val id: Long,
-        @JsonProperty("Label") val label: String,
-        @JsonProperty("Price") val price: Double,
-        @JsonProperty("Volume") val volume: Double,
-        @JsonProperty("Total") val total: Double
+    @JsonProperty("TradePairId") val id: Long,
+    @JsonProperty("Label") val label: String,
+    @JsonProperty("Price") val price: BigDecimal,
+    @JsonProperty("Volume") val volume: BigDecimal,
+    @JsonProperty("Total") val total: BigDecimal
 )
 
 data class CryptopiaOrderBookSell(
-        @JsonProperty("TradePairId") val id: Long,
-        @JsonProperty("Label") val label: String,
-        @JsonProperty("Price") val price: Double,
-        @JsonProperty("Volume") val volume: Double,
-        @JsonProperty("Total") val total: Double
+    @JsonProperty("TradePairId") val id: Long,
+    @JsonProperty("Label") val label: String,
+    @JsonProperty("Price") val price: BigDecimal,
+    @JsonProperty("Volume") val volume: BigDecimal,
+    @JsonProperty("Total") val total: BigDecimal
 )
 
 data class CryptopiaOrderBook(
-        @JsonProperty("Buy") val buy: Vector<CryptopiaOrderBookBuy>,
-        @JsonProperty("Sell") val sell: Vector<CryptopiaOrderBookSell>
+    @JsonProperty("Buy") val buy: Vector<CryptopiaOrderBookBuy>,
+    @JsonProperty("Sell") val sell: Vector<CryptopiaOrderBookSell>
 )
 
 data class CryptopiaOrderGroup(
-        @JsonProperty("TradePairId") val id: Long,
-        @JsonProperty("Market") val symbol: String,
-        @JsonProperty("Buy") val buy: Vector<CryptopiaOrderBookBuy>,
-        @JsonProperty("Sell") val sell: Vector<CryptopiaOrderBookSell>
+    @JsonProperty("TradePairId") val id: Long,
+    @JsonProperty("Market") val symbol: String,
+    @JsonProperty("Buy") val buy: Vector<CryptopiaOrderBookBuy>,
+    @JsonProperty("Sell") val sell: Vector<CryptopiaOrderBookSell>
 )

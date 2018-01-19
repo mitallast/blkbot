@@ -23,9 +23,9 @@ class TelegramServerException(val code: Int, message: String) : TelegramExceptio
 class TelegramUnknownException(val code: Int, message: String) : TelegramException(message)
 
 class TelegramBotApi @Inject constructor(
-        private val config: Config,
-        private val json: JsonService,
-        private val http: HttpClient
+    private val config: Config,
+    private val json: JsonService,
+    private val http: HttpClient
 ) {
     private val logger = LogManager.getLogger()
 
@@ -109,38 +109,38 @@ class TelegramBotApi @Inject constructor(
     }
 
     fun getUpdates(
-            offset: Long? = null,
-            limit: Long? = null,
-            timeout: Long? = null,
-            allowedUpdates: Vector<String>? = null
+        offset: Long? = null,
+        limit: Long? = null,
+        timeout: Long? = null,
+        allowedUpdates: Vector<String>? = null
     ): Future<Vector<BotUpdate>> {
         val args = HashMap.of(
-                "offset", Option.of(offset),
-                "limit", Option.of(limit),
-                "timeout", Option.of(timeout),
-                "allowed_updates", Option.of(allowedUpdates)
+            "offset", Option.of(offset),
+            "limit", Option.of(limit),
+            "timeout", Option.of(timeout),
+            "allowed_updates", Option.of(allowedUpdates)
         ).filterValues { v -> v.isDefined }.mapValues { v -> v.get() as Any }
         val type = object : TypeReference<BotResponse<Vector<BotUpdate>>>() {}
         return rpc("getUpdates", args, type)
     }
 
     fun sendMessage(
-            chatId: String,
-            text: String,
-            parse_mode: String? = null,
-            disableWebPagePreview: String? = null,
-            disableNotification: String? = null,
-            replyToMessageId: String? = null,
-            replyMarkup: BotReplyMarkup? = null
+        chatId: String,
+        text: String,
+        parse_mode: String? = null,
+        disableWebPagePreview: String? = null,
+        disableNotification: String? = null,
+        replyToMessageId: String? = null,
+        replyMarkup: BotReplyMarkup? = null
     ): Future<BotMessage> {
         val args = HashMap.of(
-                "chat_id", Option.of(chatId),
-                "text", Option.of(text),
-                "parse_mode", Option.of(parse_mode),
-                "disable_web_page_preview", Option.of(disableWebPagePreview),
-                "disable_notification", Option.of(disableNotification),
-                "reply_to_message_id", Option.of(replyToMessageId),
-                "reply_markup", Option.of(replyMarkup)
+            "chat_id", Option.of(chatId),
+            "text", Option.of(text),
+            "parse_mode", Option.of(parse_mode),
+            "disable_web_page_preview", Option.of(disableWebPagePreview),
+            "disable_notification", Option.of(disableNotification),
+            "reply_to_message_id", Option.of(replyToMessageId),
+            "reply_markup", Option.of(replyMarkup)
         ).filterValues { v -> v.isDefined }.mapValues { v -> v.get() as Any }
         val type = object : TypeReference<BotResponse<BotMessage>>() {}
         return rpc("sendMessage", args, type)
@@ -148,10 +148,10 @@ class TelegramBotApi @Inject constructor(
 }
 
 data class BotResponse<out T>(
-        @JsonProperty("ok") val ok: Boolean,
-        @JsonProperty("error_code") val errorCode: Int?,
-        @JsonProperty("description") val description: String?,
-        @JsonProperty("result") val result: T?
+    @JsonProperty("ok") val ok: Boolean,
+    @JsonProperty("error_code") val errorCode: Int?,
+    @JsonProperty("description") val description: String?,
+    @JsonProperty("result") val result: T?
 )
 
 interface BotReplyMarkup {}

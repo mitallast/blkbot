@@ -55,5 +55,12 @@
                 <ignoreVersion type="regex">.*CR.</ignoreVersion>
             </ignoreVersions>
         </rule>
+        <rule groupId="org.postgresql">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*jre7</ignoreVersion>
+                <ignoreVersion type="regex">.*jre6</ignoreVersion>
+                <ignoreVersion type="regex">.*jre9</ignoreVersion>
+            </ignoreVersions>
+        </rule>
     </rules>
 </ruleset>

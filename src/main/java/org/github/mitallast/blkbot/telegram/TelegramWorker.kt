@@ -7,7 +7,7 @@ import java.util.concurrent.Executors
 import javax.inject.Inject
 
 class TelegramWorker @Inject constructor(
-        private val tg: TelegramBotApi
+    private val tg: TelegramBotApi
 ) : AbstractLifecycleComponent() {
     private val ec: ExecutorService
 
@@ -37,8 +37,8 @@ class TelegramWorker @Inject constructor(
                     update.message.isDefined -> {
                         val message = update.message.get()
                         tg.sendMessage(
-                                chatId = message.chat.id.toString(),
-                                text = "Hello world"
+                            chatId = message.chat.id.toString(),
+                            text = "Hello world"
                         ).await().onComplete { r -> println(r) }
                     }
                 }

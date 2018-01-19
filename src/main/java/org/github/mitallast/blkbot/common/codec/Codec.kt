@@ -49,85 +49,85 @@ interface Codec<T> {
         fun <T> of(value: T): Codec<T> = StaticCodec(value)
 
         fun <Type, Param1> of(
-                builder: Function1<Param1, Type>,
-                lens1: Function1<Type, Param1>,
-                codec1: Codec<Param1>
+            builder: Function1<Param1, Type>,
+            lens1: Function1<Type, Param1>,
+            codec1: Codec<Param1>
         ): Codec<Type> {
             return Codec1(builder, lens1, codec1)
         }
 
         fun <Type, Param1, Param2> of(
-                builder: Function2<Param1, Param2, Type>,
-                lens1: Function1<Type, Param1>,
-                lens2: Function1<Type, Param2>,
-                codec1: Codec<Param1>,
-                codec2: Codec<Param2>
+            builder: Function2<Param1, Param2, Type>,
+            lens1: Function1<Type, Param1>,
+            lens2: Function1<Type, Param2>,
+            codec1: Codec<Param1>,
+            codec2: Codec<Param2>
         ): Codec<Type> {
             return Codec2(builder, lens1, lens2, codec1, codec2)
         }
 
         fun <Type, Param1, Param2, Param3> of(
-                builder: Function3<Param1, Param2, Param3, Type>,
-                lens1: Function1<Type, Param1>,
-                lens2: Function1<Type, Param2>,
-                lens3: Function1<Type, Param3>,
-                codec1: Codec<Param1>,
-                codec2: Codec<Param2>,
-                codec3: Codec<Param3>
+            builder: Function3<Param1, Param2, Param3, Type>,
+            lens1: Function1<Type, Param1>,
+            lens2: Function1<Type, Param2>,
+            lens3: Function1<Type, Param3>,
+            codec1: Codec<Param1>,
+            codec2: Codec<Param2>,
+            codec3: Codec<Param3>
         ): Codec<Type> {
             return Codec3(builder, lens1, lens2, lens3, codec1, codec2, codec3)
         }
 
         fun <Type, Param1, Param2, Param3, Param4> of(
-                builder: Function4<Param1, Param2, Param3, Param4, Type>,
-                lens1: Function1<Type, Param1>,
-                lens2: Function1<Type, Param2>,
-                lens3: Function1<Type, Param3>,
-                lens4: Function1<Type, Param4>,
-                codec1: Codec<Param1>,
-                codec2: Codec<Param2>,
-                codec3: Codec<Param3>,
-                codec4: Codec<Param4>
+            builder: Function4<Param1, Param2, Param3, Param4, Type>,
+            lens1: Function1<Type, Param1>,
+            lens2: Function1<Type, Param2>,
+            lens3: Function1<Type, Param3>,
+            lens4: Function1<Type, Param4>,
+            codec1: Codec<Param1>,
+            codec2: Codec<Param2>,
+            codec3: Codec<Param3>,
+            codec4: Codec<Param4>
         ): Codec<Type> {
             return Codec4(builder, lens1, lens2, lens3, lens4, codec1, codec2, codec3, codec4)
         }
 
         fun <Type, Param1, Param2, Param3, Param4, Param5> of(
-                builder: Function5<Param1, Param2, Param3, Param4, Param5, Type>,
-                lens1: Function1<Type, Param1>,
-                lens2: Function1<Type, Param2>,
-                lens3: Function1<Type, Param3>,
-                lens4: Function1<Type, Param4>,
-                lens5: Function1<Type, Param5>,
-                codec1: Codec<Param1>,
-                codec2: Codec<Param2>,
-                codec3: Codec<Param3>,
-                codec4: Codec<Param4>,
-                codec5: Codec<Param5>
+            builder: Function5<Param1, Param2, Param3, Param4, Param5, Type>,
+            lens1: Function1<Type, Param1>,
+            lens2: Function1<Type, Param2>,
+            lens3: Function1<Type, Param3>,
+            lens4: Function1<Type, Param4>,
+            lens5: Function1<Type, Param5>,
+            codec1: Codec<Param1>,
+            codec2: Codec<Param2>,
+            codec3: Codec<Param3>,
+            codec4: Codec<Param4>,
+            codec5: Codec<Param5>
         ): Codec<Type> {
             return Codec5(builder,
-                    lens1, lens2, lens3, lens4, lens5,
-                    codec1, codec2, codec3, codec4, codec5)
+                lens1, lens2, lens3, lens4, lens5,
+                codec1, codec2, codec3, codec4, codec5)
         }
 
         fun <Type, Param1, Param2, Param3, Param4, Param5, Param6> of(
-                builder: Function6<Param1, Param2, Param3, Param4, Param5, Param6, Type>,
-                lens1: Function1<Type, Param1>,
-                lens2: Function1<Type, Param2>,
-                lens3: Function1<Type, Param3>,
-                lens4: Function1<Type, Param4>,
-                lens5: Function1<Type, Param5>,
-                lens6: Function1<Type, Param6>,
-                codec1: Codec<Param1>,
-                codec2: Codec<Param2>,
-                codec3: Codec<Param3>,
-                codec4: Codec<Param4>,
-                codec5: Codec<Param5>,
-                codec6: Codec<Param6>
+            builder: Function6<Param1, Param2, Param3, Param4, Param5, Param6, Type>,
+            lens1: Function1<Type, Param1>,
+            lens2: Function1<Type, Param2>,
+            lens3: Function1<Type, Param3>,
+            lens4: Function1<Type, Param4>,
+            lens5: Function1<Type, Param5>,
+            lens6: Function1<Type, Param6>,
+            codec1: Codec<Param1>,
+            codec2: Codec<Param2>,
+            codec3: Codec<Param3>,
+            codec4: Codec<Param4>,
+            codec5: Codec<Param5>,
+            codec6: Codec<Param6>
         ): Codec<Type> {
             return Codec6(builder,
-                    lens1, lens2, lens3, lens4, lens5, lens6,
-                    codec1, codec2, codec3, codec4, codec5, codec6)
+                lens1, lens2, lens3, lens4, lens5, lens6,
+                codec1, codec2, codec3, codec4, codec5, codec6)
         }
     }
 }
@@ -299,9 +299,9 @@ internal class SeqCodec<Type>(private val codec: Codec<Type>) : Codec<Seq<Type>>
 }
 
 internal class Codec1<Type, Param1>(
-        private val builder: Function1<Param1, Type>,
-        private val lens1: Function1<Type, Param1>,
-        private val codec1: Codec<Param1>
+    private val builder: Function1<Param1, Type>,
+    private val lens1: Function1<Type, Param1>,
+    private val codec1: Codec<Param1>
 ) : Codec<Type> {
 
     override fun read(stream: DataInput): Type {
@@ -315,11 +315,11 @@ internal class Codec1<Type, Param1>(
 }
 
 internal class Codec2<Type, Param1, Param2>(
-        private val builder: Function2<Param1, Param2, Type>,
-        private val lens1: Function1<Type, Param1>,
-        private val lens2: Function1<Type, Param2>,
-        private val codec1: Codec<Param1>,
-        private val codec2: Codec<Param2>
+    private val builder: Function2<Param1, Param2, Type>,
+    private val lens1: Function1<Type, Param1>,
+    private val lens2: Function1<Type, Param2>,
+    private val codec1: Codec<Param1>,
+    private val codec2: Codec<Param2>
 ) : Codec<Type> {
 
     override fun read(stream: DataInput): Type {
@@ -335,13 +335,13 @@ internal class Codec2<Type, Param1, Param2>(
 }
 
 internal class Codec3<Type, Param1, Param2, Param3>(
-        private val builder: Function3<Param1, Param2, Param3, Type>,
-        private val lens1: Function1<Type, Param1>,
-        private val lens2: Function1<Type, Param2>,
-        private val lens3: Function1<Type, Param3>,
-        private val codec1: Codec<Param1>,
-        private val codec2: Codec<Param2>,
-        private val codec3: Codec<Param3>
+    private val builder: Function3<Param1, Param2, Param3, Type>,
+    private val lens1: Function1<Type, Param1>,
+    private val lens2: Function1<Type, Param2>,
+    private val lens3: Function1<Type, Param3>,
+    private val codec1: Codec<Param1>,
+    private val codec2: Codec<Param2>,
+    private val codec3: Codec<Param3>
 ) : Codec<Type> {
 
     override fun read(stream: DataInput): Type {
@@ -359,15 +359,15 @@ internal class Codec3<Type, Param1, Param2, Param3>(
 }
 
 internal class Codec4<Type, Param1, Param2, Param3, Param4>(
-        private val builder: Function4<Param1, Param2, Param3, Param4, Type>,
-        private val lens1: Function1<Type, Param1>,
-        private val lens2: Function1<Type, Param2>,
-        private val lens3: Function1<Type, Param3>,
-        private val lens4: Function1<Type, Param4>,
-        private val codec1: Codec<Param1>,
-        private val codec2: Codec<Param2>,
-        private val codec3: Codec<Param3>,
-        private val codec4: Codec<Param4>
+    private val builder: Function4<Param1, Param2, Param3, Param4, Type>,
+    private val lens1: Function1<Type, Param1>,
+    private val lens2: Function1<Type, Param2>,
+    private val lens3: Function1<Type, Param3>,
+    private val lens4: Function1<Type, Param4>,
+    private val codec1: Codec<Param1>,
+    private val codec2: Codec<Param2>,
+    private val codec3: Codec<Param3>,
+    private val codec4: Codec<Param4>
 ) : Codec<Type> {
 
     override fun read(stream: DataInput): Type {
@@ -387,17 +387,17 @@ internal class Codec4<Type, Param1, Param2, Param3, Param4>(
 }
 
 internal class Codec5<Type, Param1, Param2, Param3, Param4, Param5>(
-        private val builder: Function5<Param1, Param2, Param3, Param4, Param5, Type>,
-        private val lens1: Function1<Type, Param1>,
-        private val lens2: Function1<Type, Param2>,
-        private val lens3: Function1<Type, Param3>,
-        private val lens4: Function1<Type, Param4>,
-        private val lens5: Function1<Type, Param5>,
-        private val codec1: Codec<Param1>,
-        private val codec2: Codec<Param2>,
-        private val codec3: Codec<Param3>,
-        private val codec4: Codec<Param4>,
-        private val codec5: Codec<Param5>
+    private val builder: Function5<Param1, Param2, Param3, Param4, Param5, Type>,
+    private val lens1: Function1<Type, Param1>,
+    private val lens2: Function1<Type, Param2>,
+    private val lens3: Function1<Type, Param3>,
+    private val lens4: Function1<Type, Param4>,
+    private val lens5: Function1<Type, Param5>,
+    private val codec1: Codec<Param1>,
+    private val codec2: Codec<Param2>,
+    private val codec3: Codec<Param3>,
+    private val codec4: Codec<Param4>,
+    private val codec5: Codec<Param5>
 ) : Codec<Type> {
 
     override fun read(stream: DataInput): Type {
@@ -419,19 +419,19 @@ internal class Codec5<Type, Param1, Param2, Param3, Param4, Param5>(
 }
 
 internal class Codec6<Type, Param1, Param2, Param3, Param4, Param5, Param6>(
-        private val builder: Function6<Param1, Param2, Param3, Param4, Param5, Param6, Type>,
-        private val lens1: Function1<Type, Param1>,
-        private val lens2: Function1<Type, Param2>,
-        private val lens3: Function1<Type, Param3>,
-        private val lens4: Function1<Type, Param4>,
-        private val lens5: Function1<Type, Param5>,
-        private val lens6: Function1<Type, Param6>,
-        private val codec1: Codec<Param1>,
-        private val codec2: Codec<Param2>,
-        private val codec3: Codec<Param3>,
-        private val codec4: Codec<Param4>,
-        private val codec5: Codec<Param5>,
-        private val codec6: Codec<Param6>
+    private val builder: Function6<Param1, Param2, Param3, Param4, Param5, Param6, Type>,
+    private val lens1: Function1<Type, Param1>,
+    private val lens2: Function1<Type, Param2>,
+    private val lens3: Function1<Type, Param3>,
+    private val lens4: Function1<Type, Param4>,
+    private val lens5: Function1<Type, Param5>,
+    private val lens6: Function1<Type, Param6>,
+    private val codec1: Codec<Param1>,
+    private val codec2: Codec<Param2>,
+    private val codec3: Codec<Param3>,
+    private val codec4: Codec<Param4>,
+    private val codec5: Codec<Param5>,
+    private val codec6: Codec<Param6>
 ) : Codec<Type> {
 
     override fun read(stream: DataInput): Type {

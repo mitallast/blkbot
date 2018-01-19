@@ -1,20 +1,9 @@
 package org.github.mitallast.blkbot
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.typesafe.config.ConfigFactory
-import io.vavr.collection.Vector
-import io.vavr.control.Option
-import org.github.mitallast.blkbot.common.http.HttpClient
-import org.github.mitallast.blkbot.common.netty.NettyProvider
+import org.github.mitallast.blkbot.exchanges.ExchangeArbitrationHistory
 import org.github.mitallast.blkbot.exchanges.ExchangeArbitrator
 import org.github.mitallast.blkbot.exchanges.ExchangePair
-import org.github.mitallast.blkbot.exchanges.binance.*
-import org.github.mitallast.blkbot.exchanges.bittrex.BittrexClient
-import org.github.mitallast.blkbot.exchanges.bittrex.BittrexOrderType
-import org.github.mitallast.blkbot.exchanges.cryptopia.CryptopiaClient
-import org.github.mitallast.blkbot.exchanges.hitbtc.HitbtcClient
-import org.github.mitallast.blkbot.telegram.TelegramBotApi
-import java.net.URI
 import java.util.concurrent.CountDownLatch
 
 object Main {
@@ -79,11 +68,13 @@ object Main {
 //        hitbtc.orderBook(pair).await().onComplete { r -> println(r) }
 //        hitbtc.candles(pair).await().onComplete { r -> println(r) }
 
-        val arbitrator = bot.injector().getInstance(ExchangeArbitrator::class.java)
-        arbitrator.compute(1000).await().onComplete { top ->
-            println("top pairs:")
-            top.get().forEach { p -> println("${p.difference}% $p") }
-        }
+//        val history = bot.injector().getInstance(ExchangeArbitrationHistory::class.java)
+//        val arbitrator = bot.injector().getInstance(ExchangeArbitrator::class.java)
+//        arbitrator.compute(1000).await().onComplete { top ->
+//            history.save(System.currentTimeMillis(), top.get())
+//            println("top pairs:")
+//            top.get().forEach { p -> println("${p.difference}% $p") }
+//        }
 
         val countDownLatch = CountDownLatch(1)
         Runtime.getRuntime().addShutdownHook(Thread {

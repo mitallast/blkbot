@@ -11,6 +11,7 @@ import org.github.mitallast.blkbot.common.http.HttpClient
 import org.github.mitallast.blkbot.common.json.JsonService
 import org.github.mitallast.blkbot.exchanges.ExchangePair
 import org.joda.time.DateTime
+import java.math.BigDecimal
 import java.net.URI
 import java.nio.charset.Charset
 import javax.inject.Inject
@@ -24,9 +25,9 @@ class HitbtcUnknownException(code: Int, message: String) : HitbtcException(code,
  * See https://api.hitbtc.com/
  */
 class HitbtcClient @Inject constructor(
-        private val config: Config,
-        private val json: JsonService,
-        private val http: HttpClient
+    private val config: Config,
+    private val json: JsonService,
+    private val http: HttpClient
 ) {
     private val logger = LogManager.getLogger()
 
@@ -101,21 +102,21 @@ class HitbtcClient @Inject constructor(
      * Return trades information
      */
     fun trades(
-            pair: ExchangePair,
-            sort: HitbtcSort? = null,
-            by: HitbtcBy? = null,
-            from: Long? = null,
-            till: Long? = null,
-            limit: Long? = null,
-            offset: Long? = null
+        pair: ExchangePair,
+        sort: HitbtcSort? = null,
+        by: HitbtcBy? = null,
+        from: Long? = null,
+        till: Long? = null,
+        limit: Long? = null,
+        offset: Long? = null
     ): Future<Vector<HitbtcTrade>> {
         val params = Vector.of(
-                Option.of(sort).map { s -> "sort=${s!!.value}" },
-                Option.of(by).map { b -> "by=${b!!.value}" },
-                Option.of(from).map { b -> "from=$b" },
-                Option.of(till).map { b -> "till=$b" },
-                Option.of(limit).map { b -> "limit=$b" },
-                Option.of(offset).map { b -> "limit=$b" }
+            Option.of(sort).map { s -> "sort=${s!!.value}" },
+            Option.of(by).map { b -> "by=${b!!.value}" },
+            Option.of(from).map { b -> "from=$b" },
+            Option.of(till).map { b -> "till=$b" },
+            Option.of(limit).map { b -> "limit=$b" },
+            Option.of(offset).map { b -> "limit=$b" }
         ).filter { it.isDefined }.map { it.get() }.mkString("&")
         val uri = "/api/2/public/trades/${pair.symbol()}?$params"
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
@@ -142,13 +143,13 @@ class HitbtcClient @Inject constructor(
      * An candles used for OHLC a specific symbol.
      */
     fun candles(
-            pair: ExchangePair,
-            limit: Long? = null,
-            period: HitbtcPeriod? = null
+        pair: ExchangePair,
+        limit: Long? = null,
+        period: HitbtcPeriod? = null
     ): Future<Vector<HitbtcCandle>> {
         val params = Vector.of(
-                Option.of(limit).map { b -> "limit=$b" },
-                Option.of(period).map { b -> "period=$b" }
+            Option.of(limit).map { b -> "limit=$b" },
+            Option.of(period).map { b -> "period=$b" }
         ).filter { it.isDefined }.map { it.get() }.mkString("&")
         val uri = "/api/2/public/candles/${pair.symbol()}?$params"
         val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
@@ -203,9 +204,9 @@ class HitbtcClient @Inject constructor(
 
     private fun <T> sendJson(request: HttpRequest, type: TypeReference<T>): Future<T> {
         return send(request).map { response: FullHttpResponse ->
-            logger.info("deserialize {}", response.content().toString(charset))
+            logger.debug("deserialize {}", response.content().toString(charset))
             val mapped: T = json.deserialize(response.content(), type)
-            logger.info("response: {}", mapped)
+            logger.debug("response: {}", mapped)
             response.release()
             mapped
         }
@@ -245,62 +246,62 @@ data class HitbtcErrorInfo(val code: Int, val message: String, val description: 
 data class HitbtcError(val error: HitbtcErrorInfo)
 
 data class HitbtcCurrency(
-        val id: String,
-        val fullName: String,
-        val crypto: Boolean,
-        val payinEnabled: Boolean,
-        val payinPaymentId: Boolean,
-        val payinConfirmations: Long,
-        val payoutEnabled: Boolean,
-        val payoutIsPaymentId: Boolean,
-        val transferEnabled: Boolean
+    val id: String,
+    val fullName: String,
+    val crypto: Boolean,
+    val payinEnabled: Boolean,
+    val payinPaymentId: Boolean,
+    val payinConfirmations: Long,
+    val payoutEnabled: Boolean,
+    val payoutIsPaymentId: Boolean,
+    val transferEnabled: Boolean
 )
 
 data class HitbtcSymbol(
-        val id: String,
-        val baseCurrency: String,
-        val quoteCurrency: String,
-        val quantityIncrement: Double,
-        val tickSize: Double,
-        val takeLiquidityRate: Double,
-        val provideLiquidityRate: Double,
-        val feeCurrency: String
+    val id: String,
+    val baseCurrency: String,
+    val quoteCurrency: String,
+    val quantityIncrement: BigDecimal,
+    val tickSize: BigDecimal,
+    val takeLiquidityRate: BigDecimal,
+    val provideLiquidityRate: BigDecimal,
+    val feeCurrency: String
 )
 
 data class HitbtcTicker(
-        val ask: Double,
-        val bid: Double,
-        val last: Double,
-        val open: Double,
-        val low: Double,
-        val high: Double,
-        val volume: Double,
-        val volumeQuote: Double,
-        val timestamp: DateTime,
-        val symbol: String
+    val ask: BigDecimal,
+    val bid: BigDecimal?,
+    val last: BigDecimal,
+    val open: BigDecimal?,
+    val low: BigDecimal,
+    val high: BigDecimal,
+    val volume: BigDecimal,
+    val volumeQuote: BigDecimal,
+    val timestamp: DateTime,
+    val symbol: String
 )
 
 data class HitbtcTrade(
-        val id: Long,
-        val price: Double,
-        val quantity: Double,
-        val side: String,
-        val timestamp: DateTime
+    val id: Long,
+    val price: BigDecimal,
+    val quantity: BigDecimal,
+    val side: String,
+    val timestamp: DateTime
 )
 
-data class HitbtcOrderBookAsk(val price: Double, val size: Double)
-data class HitbtcOrderBookBid(val price: Double, val size: Double)
+data class HitbtcOrderBookAsk(val price: BigDecimal, val size: BigDecimal)
+data class HitbtcOrderBookBid(val price: BigDecimal, val size: BigDecimal)
 data class HitbtcOrderBook(
-        val ask: Vector<HitbtcOrderBookAsk>,
-        val bid: Vector<HitbtcOrderBookBid>
+    val ask: Vector<HitbtcOrderBookAsk>,
+    val bid: Vector<HitbtcOrderBookBid>
 )
 
 data class HitbtcCandle(
-        val timestamp: DateTime,
-        val open: Double,
-        val close: Double,
-        val min: Double,
-        val max: Double,
-        val volume: Double,
-        val volumeQuote: Double
+    val timestamp: DateTime,
+    val open: BigDecimal,
+    val close: BigDecimal,
+    val min: BigDecimal,
+    val max: BigDecimal,
+    val volume: BigDecimal,
+    val volumeQuote: BigDecimal
 )

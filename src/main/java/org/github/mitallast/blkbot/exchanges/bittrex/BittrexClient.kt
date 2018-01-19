@@ -12,6 +12,7 @@ import org.github.mitallast.blkbot.common.http.HttpClient
 import org.github.mitallast.blkbot.common.json.JsonService
 import org.github.mitallast.blkbot.exchanges.ExchangePair
 import org.joda.time.DateTime
+import java.math.BigDecimal
 import java.net.URI
 import java.nio.charset.Charset
 import javax.inject.Inject
@@ -25,9 +26,9 @@ class BittrexUnknownException(val code: Int, message: String) : BittrexException
  * See https://bittrex.com/Home/Api
  */
 class BittrexClient @Inject constructor(
-        private val config: Config,
-        private val json: JsonService,
-        private val http: HttpClient
+    private val config: Config,
+    private val json: JsonService,
+    private val http: HttpClient
 ) {
     private val logger = LogManager.getLogger()
 
@@ -170,57 +171,57 @@ class BittrexClient @Inject constructor(
 }
 
 data class BittrexResponse<out T>(
-        val success: Boolean,
-        val message: String,
-        val result: T?
+    val success: Boolean,
+    val message: String,
+    val result: T?
 )
 
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class BittrexMarket(
-        @JsonProperty("MarketCurrency") val marketCurrency: String,
-        @JsonProperty("BaseCurrency") val baseCurrency: String,
-        @JsonProperty("MarketCurrencyLong") val marketCurrencyLong: String,
-        @JsonProperty("BaseCurrencyLong") val baseCurrencyLong: String,
-        @JsonProperty("MinTradeSize") val minTradeSize: Double,
-        @JsonProperty("MarketName") val marketName: String,
-        @JsonProperty("IsActive") val isActive: Boolean,
-        @JsonProperty("Created") val created: DateTime
+    @JsonProperty("MarketCurrency") val marketCurrency: String,
+    @JsonProperty("BaseCurrency") val baseCurrency: String,
+    @JsonProperty("MarketCurrencyLong") val marketCurrencyLong: String,
+    @JsonProperty("BaseCurrencyLong") val baseCurrencyLong: String,
+    @JsonProperty("MinTradeSize") val minTradeSize: BigDecimal,
+    @JsonProperty("MarketName") val marketName: String,
+    @JsonProperty("IsActive") val isActive: Boolean,
+    @JsonProperty("Created") val created: DateTime
 )
 
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class BittrexCurrency(
-        @JsonProperty("Currency") val currency: String,
-        @JsonProperty("CurrencyLong") val currencyLong: String,
-        @JsonProperty("MinConfirmation") val minConfirmation: Int,
-        @JsonProperty("TxFee") val txFee: Double,
-        @JsonProperty("IsActive") val isActive: Boolean,
-        @JsonProperty("CoinType") val coinType: String,
-        @JsonProperty("BaseAddress") val baseAddress: String?
+    @JsonProperty("Currency") val currency: String,
+    @JsonProperty("CurrencyLong") val currencyLong: String,
+    @JsonProperty("MinConfirmation") val minConfirmation: Int,
+    @JsonProperty("TxFee") val txFee: BigDecimal,
+    @JsonProperty("IsActive") val isActive: Boolean,
+    @JsonProperty("CoinType") val coinType: String,
+    @JsonProperty("BaseAddress") val baseAddress: String?
 )
 
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class BittrexTicker(
-        @JsonProperty("Bid") val bid: Double,
-        @JsonProperty("Ask") val ask: Double,
-        @JsonProperty("Last") val last: Double
+    @JsonProperty("Bid") val bid: BigDecimal,
+    @JsonProperty("Ask") val ask: BigDecimal,
+    @JsonProperty("Last") val last: BigDecimal
 )
 
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class BittrexMarketSummary(
-        @JsonProperty("MarketName") val marketName: String,
-        @JsonProperty("High") val high: Double,
-        @JsonProperty("Low") val low: Double,
-        @JsonProperty("Volume") val volume: Double,
-        @JsonProperty("Last") val last: Double,
-        @JsonProperty("BaseVolume") val baseVolume: Double,
-        @JsonProperty("TimeStamp") val timestamp: DateTime,
-        @JsonProperty("Bid") val bid: Double,
-        @JsonProperty("Ask") val ask: Double,
-        @JsonProperty("OpenBuyOrders") val openBuyOrders: Long,
-        @JsonProperty("OpenSellOrders") val openSellOrders: Long,
-        @JsonProperty("PrevDay") val prevDay: Double,
-        @JsonProperty("Created") val created: DateTime,
-        @JsonProperty("DisplayMarketName") val displayMarketName: String?
+    @JsonProperty("MarketName") val marketName: String,
+    @JsonProperty("High") val high: BigDecimal,
+    @JsonProperty("Low") val low: BigDecimal,
+    @JsonProperty("Volume") val volume: BigDecimal,
+    @JsonProperty("Last") val last: BigDecimal,
+    @JsonProperty("BaseVolume") val baseVolume: BigDecimal,
+    @JsonProperty("TimeStamp") val timestamp: DateTime,
+    @JsonProperty("Bid") val bid: BigDecimal,
+    @JsonProperty("Ask") val ask: BigDecimal,
+    @JsonProperty("OpenBuyOrders") val openBuyOrders: Long,
+    @JsonProperty("OpenSellOrders") val openSellOrders: Long,
+    @JsonProperty("PrevDay") val prevDay: BigDecimal,
+    @JsonProperty("Created") val created: DateTime,
+    @JsonProperty("DisplayMarketName") val displayMarketName: String?
 )
 
 class BittrexOrderType private constructor(val value: String) {
@@ -232,24 +233,26 @@ class BittrexOrderType private constructor(val value: String) {
 }
 
 data class BittrexOrderBookBuy(
-        @JsonProperty("Quantity") val quantity: Double,
-        @JsonProperty("Rate") val rate: Double)
+    @JsonProperty("Quantity") val quantity: BigDecimal,
+    @JsonProperty("Rate") val rate: BigDecimal)
+
 data class BittrexOrderBookSell(
-        @JsonProperty("Quantity") val quantity: Double,
-        @JsonProperty("Rate") val rate: Double
-)
-data class BittrexOrderBook(
-        @JsonProperty("buy") val buy: Vector<BittrexOrderBookBuy>,
-        @JsonProperty("sell") val sell: Vector<BittrexOrderBookSell>
+    @JsonProperty("Quantity") val quantity: BigDecimal,
+    @JsonProperty("Rate") val rate: BigDecimal
 )
 
-@JsonIgnoreProperties(ignoreUnknown=true)
+data class BittrexOrderBook(
+    @JsonProperty("buy") val buy: Vector<BittrexOrderBookBuy>,
+    @JsonProperty("sell") val sell: Vector<BittrexOrderBookSell>
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class BittrexMarketHistory(
-        @JsonProperty("Id") val id: Long,
-        @JsonProperty("TimeStamp") val timestamp: DateTime,
-        @JsonProperty("Quantity") val quantity: Double,
-        @JsonProperty("Price") val price: Double,
-        @JsonProperty("Total") val total: Double,
-        @JsonProperty("FillType") val fillType: String,
-        @JsonProperty("OrderType") val orderType: String
+    @JsonProperty("Id") val id: Long,
+    @JsonProperty("TimeStamp") val timestamp: DateTime,
+    @JsonProperty("Quantity") val quantity: BigDecimal,
+    @JsonProperty("Price") val price: BigDecimal,
+    @JsonProperty("Total") val total: BigDecimal,
+    @JsonProperty("FillType") val fillType: String,
+    @JsonProperty("OrderType") val orderType: String
 )

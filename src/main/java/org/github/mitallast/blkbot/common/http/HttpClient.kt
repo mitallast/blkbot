@@ -52,8 +52,8 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
     private val connectTimeout: Long = config.getDuration("http.connect_timeout", TimeUnit.MILLISECONDS)
 
     private val sslCtx: SslContext = SslContextBuilder.forClient()
-            .trustManager(InsecureTrustManagerFactory.INSTANCE)
-            .build()
+        .trustManager(InsecureTrustManagerFactory.INSTANCE)
+        .build()
 
     private val queueAttr = AttributeKey.valueOf<ConcurrentLinkedDeque<Promise<FullHttpResponse>>>("queue")
 
@@ -63,16 +63,16 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
 
     private fun bootstrap(): Bootstrap {
         return Bootstrap()
-                .channel(provider.clientChannel())
-                .group(provider.child())
-                .option(ChannelOption.SO_REUSEADDR, reuseAddress)
-                .option(ChannelOption.SO_KEEPALIVE, keepAlive)
-                .option(ChannelOption.TCP_NODELAY, tcpNoDelay)
-                .option(ChannelOption.SO_SNDBUF, sndBuf)
-                .option(ChannelOption.SO_RCVBUF, rcvBuf)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout.toInt())
-                .option<ByteBufAllocator>(ChannelOption.ALLOCATOR, PooledByteBufAllocator(true))
-                .option<RecvByteBufAllocator>(ChannelOption.RCVBUF_ALLOCATOR, FixedRecvByteBufAllocator(65536))
+            .channel(provider.clientChannel())
+            .group(provider.child())
+            .option(ChannelOption.SO_REUSEADDR, reuseAddress)
+            .option(ChannelOption.SO_KEEPALIVE, keepAlive)
+            .option(ChannelOption.TCP_NODELAY, tcpNoDelay)
+            .option(ChannelOption.SO_SNDBUF, sndBuf)
+            .option(ChannelOption.SO_RCVBUF, rcvBuf)
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout.toInt())
+            .option<ByteBufAllocator>(ChannelOption.ALLOCATOR, PooledByteBufAllocator(true))
+            .option<RecvByteBufAllocator>(ChannelOption.RCVBUF_ALLOCATOR, FixedRecvByteBufAllocator(65536))
     }
 
     private inner class PooledHttpHostClient constructor(uri: URI) : HttpHostClient {
@@ -187,8 +187,8 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
         }
 
         private val bootstrap: Bootstrap = bootstrap()
-                .remoteAddress(host, port)
-                .handler(WebSocketClientChannelInitializer())
+            .remoteAddress(host, port)
+            .handler(WebSocketClientChannelInitializer())
 
         private val channel: Channel
 
@@ -258,8 +258,8 @@ class HttpClient @Inject constructor(config: Config, private val provider: Netty
                 }
                 if (msg is FullHttpResponse) {
                     throw IllegalStateException(
-                            "Unexpected FullHttpResponse (getStatus=" + msg.status() +
-                                    ", content=" + msg.content().toString(CharsetUtil.UTF_8) + ')')
+                        "Unexpected FullHttpResponse (getStatus=" + msg.status() +
+                            ", content=" + msg.content().toString(CharsetUtil.UTF_8) + ')')
                 }
 
                 val frame = msg as WebSocketFrame

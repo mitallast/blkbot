@@ -5,12 +5,13 @@ import io.vavr.collection.Map
 import io.vavr.concurrent.Future
 import org.github.mitallast.blkbot.exchanges.ExchangePair
 import org.github.mitallast.blkbot.exchanges.ExchangeTradeProvider
+import java.math.BigDecimal
 import javax.inject.Inject
 
 class BinanceTradeProvider @Inject constructor(val binance: BinanceClient) : ExchangeTradeProvider {
     override fun name(): String = "Binance"
 
-    override fun trades(): Future<Map<ExchangePair, Double>> {
+    override fun trades(): Future<Map<ExchangePair, BigDecimal>> {
         val info = binance.exchangeInfo()
         val prices = binance.tickerPrices()
         return info.flatMap { prices }.map {

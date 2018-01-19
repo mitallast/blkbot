@@ -14,6 +14,7 @@ import org.github.mitallast.blkbot.common.http.HttpModule
 import org.github.mitallast.blkbot.common.json.JsonModule
 import org.github.mitallast.blkbot.common.netty.NettyModule
 import org.github.mitallast.blkbot.exchanges.ExchangesModule
+import org.github.mitallast.blkbot.persistence.PersistenceModule
 import org.github.mitallast.blkbot.telegram.TelegramModule
 
 class Bot(conf: Config, vararg plugins: AbstractModule) : AbstractLifecycleComponent() {
@@ -30,6 +31,7 @@ class Bot(conf: Config, vararg plugins: AbstractModule) : AbstractLifecycleCompo
         modules.add(EventBusModule())
         modules.add(NettyModule())
         modules.add(HttpModule())
+        modules.add(PersistenceModule())
 
         modules.add(ExchangesModule())
 

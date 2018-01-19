@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 
 abstract class AbstractLifecycleComponent : LifecycleComponent {
-    protected val logger = LogManager.getLogger(javaClass)
+    protected val logger: Logger = LogManager.getLogger(javaClass)
     private val lifecycle = Lifecycle()
 
     override fun lifecycle(): Lifecycle {
