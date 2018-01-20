@@ -14,16 +14,24 @@ class ExchangeArbitrationHistory @Inject constructor(
     fun save(timestamp: Long, pairs: Vector<ExchangeArbitrationPair>) {
         db.context().use { ctx ->
             val h = EXCHANGE_ARBITRATION_HISTORY
-            var insert = ctx.insertInto(h, h.TIMESTAMP, h.BASE, h.QUOTE, h.LEFT_EXCHANGE, h.RIGHT_EXCHANGE, h.LEFT_PRICE, h.RIGHT_PRICE)
+            var insert = ctx.insertInto(h,
+                h.TIMESTAMP,
+                h.BASE, h.QUOTE,
+                h.LEFT_EXCHANGE, h.RIGHT_EXCHANGE,
+                h.LEFT_PRICE, h.RIGHT_PRICE,
+                h.LEFT_VOLUME, h.RIGHT_VOLUME,
+                h.LEFT_ASK, h.RIGHT_ASK,
+                h.LEFT_BID, h.RIGHT_BID
+            )
             pairs.forEach { pair ->
                 insert = insert.values(
                     db.timestamp(timestamp),
-                    pair.pair.base,
-                    pair.pair.quote,
-                    pair.leftExchange,
-                    pair.rightExchange,
-                    pair.leftPrice,
-                    pair.rightPrice
+                    pair.pair.base, pair.pair.quote,
+                    pair.leftExchange, pair.rightExchange,
+                    pair.leftPrice, pair.rightPrice,
+                    pair.leftVolume, pair.rightVolume,
+                    pair.leftAsk, pair.rightAsk,
+                    pair.leftBid, pair.rightBid
                 )
             }
             insert.execute()

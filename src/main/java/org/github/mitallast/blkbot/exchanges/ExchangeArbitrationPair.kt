@@ -5,9 +5,15 @@ import java.math.BigDecimal
 data class ExchangeArbitrationPair(
     val pair: ExchangePair,
     val leftExchange: String,
-    val leftPrice: BigDecimal,
     val rightExchange: String,
-    val rightPrice: BigDecimal
+    val leftPrice: BigDecimal,
+    val rightPrice: BigDecimal,
+    val leftVolume: BigDecimal,
+    val rightVolume: BigDecimal,
+    val leftAsk: BigDecimal,
+    val rightAsk: BigDecimal,
+    val leftBid: BigDecimal,
+    val rightBid: BigDecimal
 ) {
     val difference: BigDecimal = if (leftPrice > rightPrice) {
         d100 - (rightPrice / leftPrice * d100)

@@ -73,7 +73,9 @@ object Main {
 //        arbitrator.compute(1000).await().onComplete { top ->
 //            history.save(System.currentTimeMillis(), top.get())
 //            println("top pairs:")
-//            top.get().forEach { p -> println("${p.difference}% $p") }
+//            top.get().forEach { p -> println("${p.difference}% ${p.pair} " +
+//              "${p.leftExchange}/${p.rightExchange} " +
+//              "${p.leftPrice}/${p.rightPrice}") }
 //        }
 
         val countDownLatch = CountDownLatch(1)

@@ -29,7 +29,7 @@ class ExchangeArbitrator @Inject constructor(exchanges: Set<@JvmSuppressWildcard
     }
 
     private fun collect(
-        exchanges: Vector<Tuple2<String, Map<ExchangePair, BigDecimal>>>,
+        exchanges: Vector<Tuple2<String, Map<ExchangePair, ExchangeTrade>>>,
         acc: Vector<ExchangeArbitrationPair>
     ): Vector<ExchangeArbitrationPair> {
         return if (exchanges.size() <= 1) {
@@ -41,14 +41,21 @@ class ExchangeArbitrator @Inject constructor(exchanges: Set<@JvmSuppressWildcard
             val tail = exchanges.tail()
             val rights = tail.toVector()
             logger.info("collect $leftExchange")
-            val collected = head._2.toVector().flatMap { leftTrade ->
-                val pair = leftTrade._1
-                val leftPrice = leftTrade._2
+            val collected = head._2.toVector().flatMap { left ->
+                val pair = left._1
+                val leftTrade = left._2
                 rights.flatMap { right ->
                     val rightExchange = right._1
                     right._2.get(pair)
-                        .map { rightPrice ->
-                            ExchangeArbitrationPair(pair, leftExchange, leftPrice, rightExchange, rightPrice)
+                        .map { rightTrade ->
+                            ExchangeArbitrationPair(
+                                pair = pair,
+                                leftExchange = leftExchange, rightExchange = rightExchange,
+                                leftPrice = leftTrade.price, rightPrice = rightTrade.price,
+                                leftVolume = leftTrade.volume, rightVolume = rightTrade.volume,
+                                leftBid = leftTrade.bid, rightBid = rightTrade.bid,
+                                leftAsk = leftTrade.ask, rightAsk = rightTrade.ask
+                            )
                         }
                         .filter { it.difference >= minDifference }
                 }

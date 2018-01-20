@@ -4,7 +4,15 @@ import io.vavr.collection.Map
 import io.vavr.concurrent.Future
 import java.math.BigDecimal
 
+data class ExchangeTrade(
+    val pair: ExchangePair,
+    val price: BigDecimal,
+    val volume: BigDecimal,
+    val bid: BigDecimal,
+    val ask: BigDecimal
+)
+
 interface ExchangeTradeProvider {
     fun name(): String
-    fun trades(): Future<Map<ExchangePair, BigDecimal>>
+    fun trades(): Future<Map<ExchangePair, ExchangeTrade>>
 }

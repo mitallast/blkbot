@@ -37,10 +37,16 @@ class ExchangeArbitratorWorker @Inject constructor(
             val top = arbitrator.compute(1000).get()
             history.save(System.currentTimeMillis(), top)
 
-            logger.info("top pairs:")
-            top.forEach { p -> logger.info("${p.difference}% ${p.pair} " +
-                "${p.leftExchange}/${p.rightExchange} " +
-                "${p.leftPrice}/${p.rightPrice}") }
+            println("top pairs:")
+            top.forEach { p ->
+                println("${p.difference}% ${p.pair} " +
+                    "${p.leftExchange}/${p.rightExchange} " +
+                    "price:${p.leftPrice}/${p.rightPrice} " +
+                    "vol:${p.leftVolume}/${p.rightVolume} " +
+                    "bid:${p.leftBid}/${p.rightBid} " +
+                    "ask:${p.leftAsk}/${p.rightAsk}"
+                )
+            }
         } catch (e: Exception) {
             logger.error("error run arbitrator", e)
         }

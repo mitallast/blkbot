@@ -4,6 +4,7 @@ import io.vavr.Tuple
 import io.vavr.collection.Map
 import io.vavr.concurrent.Future
 import org.github.mitallast.blkbot.exchanges.ExchangePair
+import org.github.mitallast.blkbot.exchanges.ExchangeTrade
 import org.github.mitallast.blkbot.exchanges.ExchangeTradeProvider
 import java.math.BigDecimal
 import javax.inject.Inject
@@ -11,7 +12,7 @@ import javax.inject.Inject
 class HitbtcTradeProvider @Inject constructor(private val hitbtc: HitbtcClient) : ExchangeTradeProvider {
     override fun name(): String = "Hitbtc"
 
-    override fun trades(): Future<Map<ExchangePair, BigDecimal>> {
+    override fun trades(): Future<Map<ExchangePair, ExchangeTrade>> {
         val info = hitbtc.symbols()
         val prices = hitbtc.tickers()
         return info.flatMap { prices }.map {
@@ -21,7 +22,14 @@ class HitbtcTradeProvider @Inject constructor(private val hitbtc: HitbtcClient) 
                 .toMap { price ->
                     val symbol = symbols.apply(price.symbol)
                     val pair = ExchangePair(symbol.baseCurrency, symbol.quoteCurrency)
-                    Tuple.of(pair, price.last)
+                    val trade = ExchangeTrade(
+                        pair = pair,
+                        price = price.last,
+                        volume = price.volume,
+                        bid = price.bid ?: BigDecimal.ZERO,
+                        ask = price.ask
+                    )
+                    Tuple.of(pair, trade)
                 }
         }
     }

@@ -252,6 +252,15 @@ class BinanceClient @Inject constructor(
         return sendJson(request, object : TypeReference<BinancePriceChangeStatistics>() {})
     }
 
+    @BinanceWeight(250)
+    fun tickers24hr(): Future<Vector<BinancePriceChangeStatistics>> {
+        val uri = "/api/v1/ticker/24hr"
+        val request = DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
+        request.headers().set(HttpHeaderNames.HOST, host)
+        request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE)
+        return sendJson(request, object : TypeReference<Vector<BinancePriceChangeStatistics>>() {})
+    }
+
     /**
      * Latest price for all symbols.
      */
