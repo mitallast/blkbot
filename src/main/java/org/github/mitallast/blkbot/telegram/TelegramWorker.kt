@@ -2,12 +2,14 @@ package org.github.mitallast.blkbot.telegram
 
 import io.netty.util.concurrent.DefaultThreadFactory
 import org.github.mitallast.blkbot.common.component.AbstractLifecycleComponent
+import org.github.mitallast.blkbot.exchanges.ExchangeArbitratorWorker
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Inject
 
 class TelegramWorker @Inject constructor(
-    private val tg: TelegramBotApi
+    private val tg: TelegramBotApi,
+    private val arbitrator: ExchangeArbitratorWorker
 ) : AbstractLifecycleComponent() {
     private val ec: ExecutorService
 
@@ -36,10 +38,21 @@ class TelegramWorker @Inject constructor(
                 when {
                     update.message.isDefined -> {
                         val message = update.message.get()
-                        tg.sendMessage(
-                            chatId = message.chat.id.toString(),
-                            text = "Hello world"
-                        ).await().onComplete { r -> println(r) }
+                        when (message.text.orNull) {
+                            "/top" -> {
+                                val text = "top pairs:\n" +
+                                    arbitrator.lastTop().take(20).map { p ->
+                                        "- ${p.difference}%" +
+                                            " ${p.leftExchange}/${p.rightExchange}" +
+                                            " ${p.leftPrice}/${p.rightVolume}\n"
+                                    }.joinToString(separator = "")
+                                tg.sendMessage(
+                                    chatId = message.chat.id.toString(),
+                                    text = text
+                                ).await()
+                            }
+                        }
+
                     }
                 }
             }

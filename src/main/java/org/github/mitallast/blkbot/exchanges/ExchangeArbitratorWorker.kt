@@ -1,6 +1,7 @@
 package org.github.mitallast.blkbot.exchanges
 
 import io.netty.util.concurrent.DefaultThreadFactory
+import io.vavr.collection.Vector
 import org.github.mitallast.blkbot.common.component.AbstractLifecycleComponent
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -13,7 +14,10 @@ class ExchangeArbitratorWorker @Inject constructor(
     private val arbitrator: ExchangeArbitrator
 ) : AbstractLifecycleComponent() {
     private val ec: ScheduledExecutorService
+    @Volatile
     private var future: ScheduledFuture<*>? = null
+    @Volatile
+    private var top: Vector<ExchangeArbitrationPair> = Vector.empty()
 
     init {
         val tf = DefaultThreadFactory("arbitrator")
@@ -32,9 +36,11 @@ class ExchangeArbitratorWorker @Inject constructor(
         ec.shutdown()
     }
 
+    fun lastTop(): Vector<ExchangeArbitrationPair> = top
+
     private fun run() {
         try {
-            val top = arbitrator.compute(1000).get()
+            top = arbitrator.compute(1000).get()
             history.save(System.currentTimeMillis(), top)
 
             println("top pairs:")

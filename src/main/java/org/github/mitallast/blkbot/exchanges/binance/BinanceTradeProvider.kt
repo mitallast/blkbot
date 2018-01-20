@@ -18,8 +18,10 @@ class BinanceTradeProvider @Inject constructor(
     private val binance: BinanceClient
 ) : ExchangeTradeProvider {
     private var lock = ReentrantLock()
-    private var time: Long = 0
     private val cache: Long = config.getDuration("binance.cache").toMillis()
+    @Volatile
+    private var time: Long = 0
+    @Volatile
     private var tickers: Future<Vector<BinancePriceChangeStatistics>>? = null
 
     override fun name(): String = "Binance"
