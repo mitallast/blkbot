@@ -42,7 +42,7 @@ class TelegramWorker @Inject constructor(
                             "/top" -> {
                                 val text = "top pairs:\n" +
                                     arbitrator.lastTop().take(20).map { p ->
-                                        "- ${p.difference}%" +
+                                        "- ${p.difference} ${p.pair}%" +
                                             " ${p.leftExchange}/${p.rightExchange}" +
                                             " ${p.leftPrice}/${p.rightVolume}\n"
                                     }.joinToString(separator = "")
