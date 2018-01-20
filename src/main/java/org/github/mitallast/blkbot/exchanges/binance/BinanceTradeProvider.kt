@@ -1,5 +1,6 @@
 package org.github.mitallast.blkbot.exchanges.binance
 
+import com.typesafe.config.Config
 import io.vavr.Tuple
 import io.vavr.collection.Map
 import io.vavr.collection.Vector
@@ -12,9 +13,13 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import javax.inject.Inject
 
-class BinanceTradeProvider @Inject constructor(private val binance: BinanceClient) : ExchangeTradeProvider {
+class BinanceTradeProvider @Inject constructor(
+    config: Config,
+    private val binance: BinanceClient
+) : ExchangeTradeProvider {
     private var lock = ReentrantLock()
     private var time: Long = 0
+    private val cache: Long = config.getDuration("binance.cache").toMillis()
     private var tickers: Future<Vector<BinancePriceChangeStatistics>>? = null
 
     override fun name(): String = "Binance"
@@ -45,7 +50,9 @@ class BinanceTradeProvider @Inject constructor(private val binance: BinanceClien
     private fun tickers24h(): Future<Vector<BinancePriceChangeStatistics>> {
         lock.lock()
         try {
-            if (time + TimeUnit.HOURS.toMillis(1) < System.currentTimeMillis()) {
+            val now = System.currentTimeMillis()
+            if (time + cache < now) {
+                time = now
                 tickers = binance.tickers24hr()
             }
             return tickers!!
