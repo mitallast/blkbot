@@ -19,7 +19,8 @@ class ExchangeArbitrationHistory @Inject constructor(
                 h.BASE, h.QUOTE,
                 h.LEFT_EXCHANGE, h.RIGHT_EXCHANGE,
                 h.LEFT_PRICE, h.RIGHT_PRICE,
-                h.LEFT_VOLUME, h.RIGHT_VOLUME,
+                h.LEFT_VOLUME_BASE, h.RIGHT_VOLUME_BASE,
+                h.LEFT_VOLUME_QUOTE, h.RIGHT_VOLUME_QUOTE,
                 h.LEFT_ASK, h.RIGHT_ASK,
                 h.LEFT_BID, h.RIGHT_BID
             )
@@ -29,7 +30,8 @@ class ExchangeArbitrationHistory @Inject constructor(
                     pair.pair.base, pair.pair.quote,
                     pair.leftExchange, pair.rightExchange,
                     pair.leftPrice, pair.rightPrice,
-                    pair.leftVolume, pair.rightVolume,
+                    pair.leftVolumeBase, pair.rightVolumeBase,
+                    pair.leftVolumeQuote, pair.rightVolumeQuote,
                     pair.leftAsk, pair.rightAsk,
                     pair.leftBid, pair.rightBid
                 )

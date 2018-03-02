@@ -52,11 +52,13 @@ class ExchangeArbitrator @Inject constructor(exchanges: Set<@JvmSuppressWildcard
                                 pair = pair,
                                 leftExchange = leftExchange, rightExchange = rightExchange,
                                 leftPrice = leftTrade.price, rightPrice = rightTrade.price,
-                                leftVolume = leftTrade.volume, rightVolume = rightTrade.volume,
+                                leftVolumeBase = leftTrade.volumeBase, rightVolumeBase = rightTrade.volumeBase,
+                                leftVolumeQuote = leftTrade.volumeQuote, rightVolumeQuote = rightTrade.volumeQuote,
                                 leftBid = leftTrade.bid, rightBid = rightTrade.bid,
                                 leftAsk = leftTrade.ask, rightAsk = rightTrade.ask
                             )
                         }
+                        .filter { limits(it) }
                         .filter { it.difference >= minDifference }
                 }
             }
@@ -64,4 +66,19 @@ class ExchangeArbitrator @Inject constructor(exchanges: Set<@JvmSuppressWildcard
         }
     }
 
+    private fun limits(pair: ExchangeArbitrationPair): Boolean {
+        return limits(pair.pair.base, pair.leftVolumeBase) &&
+            limits(pair.pair.base, pair.rightVolumeBase) &&
+            limits(pair.pair.quote, pair.leftVolumeQuote) &&
+            limits(pair.pair.quote, pair.rightVolumeQuote)
+    }
+
+    private fun limits(currency: String, volume: BigDecimal): Boolean {
+        return when (currency) {
+            "BTC" -> volume > BigDecimal.valueOf(10)
+            "ETH" -> volume > BigDecimal.valueOf(100)
+            "USDT" -> volume > BigDecimal.valueOf(10000)
+            else -> volume > BigDecimal.ONE
+        }
+    }
 }

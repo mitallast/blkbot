@@ -44,7 +44,9 @@ class TelegramWorker @Inject constructor(
                                     arbitrator.lastTop().take(20).map { p ->
                                         "- ${p.difference}% ${p.pair}" +
                                             " ${p.leftExchange}/${p.rightExchange}" +
-                                            " ${p.leftPrice}/${p.rightVolume}\n"
+                                            " price:${p.leftPrice}/${p.rightPrice}" +
+                                            " volB:${p.leftVolumeBase}/${p.rightVolumeBase}" +
+                                            " volQ:${p.leftVolumeQuote}/${p.rightVolumeQuote}\n"
                                     }.joinToString(separator = "")
                                 tg.sendMessage(
                                     chatId = message.chat.id.toString(),

@@ -48,7 +48,8 @@ class ExchangeArbitratorWorker @Inject constructor(
                 println("${p.difference}% ${p.pair} " +
                     "${p.leftExchange}/${p.rightExchange} " +
                     "price:${p.leftPrice}/${p.rightPrice} " +
-                    "vol:${p.leftVolume}/${p.rightVolume} " +
+                    "volB:${p.leftVolumeBase}/${p.rightVolumeBase} " +
+                    "volQ:${p.leftVolumeQuote}/${p.rightVolumeQuote} " +
                     "bid:${p.leftBid}/${p.rightBid} " +
                     "ask:${p.leftAsk}/${p.rightAsk}"
                 )

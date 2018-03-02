@@ -18,14 +18,14 @@ class HitbtcTradeProvider @Inject constructor(private val hitbtc: HitbtcClient) 
         return info.flatMap { prices }.map {
             val symbols = info.get().toMap { s -> Tuple.of(s.id, s) }
             prices.get()
-                .filter { it.volume > BigDecimal.ONE }
                 .toMap { price ->
                     val symbol = symbols.apply(price.symbol)
                     val pair = ExchangePair(symbol.baseCurrency, symbol.quoteCurrency)
                     val trade = ExchangeTrade(
                         pair = pair,
                         price = price.last,
-                        volume = price.volume,
+                        volumeBase = price.volume,
+                        volumeQuote = price.volumeQuote,
                         bid = price.bid ?: BigDecimal.ZERO,
                         ask = price.ask
                     )

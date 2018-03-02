@@ -9,7 +9,6 @@ import org.github.mitallast.blkbot.exchanges.ExchangePair
 import org.github.mitallast.blkbot.exchanges.ExchangeTrade
 import org.github.mitallast.blkbot.exchanges.ExchangeTradeProvider
 import java.math.BigDecimal
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import javax.inject.Inject
 
@@ -33,19 +32,21 @@ class BinanceTradeProvider @Inject constructor(
         return info.flatMap { prices }.flatMap { tickers24h }.map {
             val symbols = info.get().symbols.toMap { s -> Tuple.of(s.symbol, s) }
             val tickers = tickers24h.get().toMap { t -> Tuple.of(t.symbol, t) }
-            prices.get().toMap { price ->
-                val symbol = symbols.apply(price.symbol)
-                val ticker = tickers.apply(price.symbol)
-                val pair = ExchangePair(symbol.baseAsset, symbol.quoteAsset)
-                val trade = ExchangeTrade(
-                    pair = pair,
-                    price = price.price,
-                    volume = ticker.volume,
-                    bid = ticker.bidPrice,
-                    ask = ticker.askPrice
-                )
-                Tuple.of(pair, trade)
-            }.filterValues { it.volume > BigDecimal.ONE }
+            prices.get()
+                .toMap { price ->
+                    val symbol = symbols.apply(price.symbol)
+                    val ticker = tickers.apply(price.symbol)
+                    val pair = ExchangePair(symbol.baseAsset, symbol.quoteAsset)
+                    val trade = ExchangeTrade(
+                        pair = pair,
+                        price = price.price,
+                        volumeBase = ticker.volume,
+                        volumeQuote = ticker.quoteVolume,
+                        bid = ticker.bidPrice,
+                        ask = ticker.askPrice
+                    )
+                    Tuple.of(pair, trade)
+                }
         }
     }
 

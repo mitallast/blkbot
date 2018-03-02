@@ -18,14 +18,14 @@ class BittrexTradeProvider @Inject constructor(val bittrex: BittrexClient) : Exc
         return info.flatMap { prices }.map {
             val symbols = info.get().toMap { s -> Tuple.of(s.marketName, s) }
             prices.get()
-                .filter { it.volume > BigDecimal.ONE }
                 .toMap { price ->
                     val symbol = symbols.apply(price.marketName)
                     val pair = ExchangePair(symbol.baseCurrency, symbol.marketCurrency)
                     val trade = ExchangeTrade(
                         pair = pair,
                         price = price.last,
-                        volume = price.volume,
+                        volumeBase = price.baseVolume,
+                        volumeQuote = price.volume,
                         bid = price.bid,
                         ask = price.ask
                     )

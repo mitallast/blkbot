@@ -7,7 +7,8 @@ import java.math.BigDecimal
 data class ExchangeTrade(
     val pair: ExchangePair,
     val price: BigDecimal,
-    val volume: BigDecimal,
+    val volumeBase: BigDecimal,
+    val volumeQuote: BigDecimal,
     val bid: BigDecimal,
     val ask: BigDecimal
 )
